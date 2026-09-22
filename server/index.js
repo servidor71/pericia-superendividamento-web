@@ -1,6 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { MercadoPagoConfig, Payment as MPPayment } from 'mercadopago';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -153,5 +160,18 @@ app.post('/api/webhooks/mercadopago', async (req, res) => {
   }
 });
 
+// -----------------------------------------------------------------------------
+// SERVIR ARQUIVOS ESTÁTICOS DO FRONTEND (HOSTINGER / PRODUÇÃO)
+// -----------------------------------------------------------------------------
+const distPath = path.resolve(__dirname, '../dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    }
+  });
+}
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor Mercado Pago rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor Mercado Pago / Hostinger rodando na porta ${PORT}`));
