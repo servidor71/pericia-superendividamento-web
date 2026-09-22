@@ -45,7 +45,9 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
   });
 
   // Margem Disponível & Recursos Livres
-  const margemDisponivelAntes = Math.max(0, rlaAntesTotal - totalDespesas - minimoExistencial);
+  // Dedução efetiva: despesas essenciais comprovadas (ou piso do Mínimo Existencial se despesas forem menores)
+  const despesaDeducaoEfetiva = totalDespesas > 0 ? Math.max(totalDespesas, minimoExistencial) : minimoExistencial;
+  const margemDisponivelAntes = rlaAntesTotal - despesaDeducaoEfetiva;
   const margemDisponivelAposBruta = rlaDepoisTotal - minimoExistencial;
   const totalNaoConsignados = contracts
     .filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal')))
@@ -660,8 +662,18 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
                 <tfoot>
                   <tr className="bg-slate-100 text-slate-900 font-extrabold text-xs uppercase border-t-2 border-slate-300">
                     <td className="py-2.5 px-4 font-extrabold text-xs text-slate-900">MARGEM DISPONÍVEL (MD)</td>
-                    <td className="py-2.5 px-4 text-right text-blue-900 font-extrabold text-xs">{formatCurrency(margemDisponivelAntes)}</td>
-                    <td className="py-2.5 px-4 font-semibold text-xs text-blue-900">Margem Disponível para o Plano</td>
+                    <td className={`py-2.5 px-4 text-right font-black text-sm ${margemDisponivelAntes >= 0 ? 'text-blue-900' : 'text-red-700'}`}>
+                      {formatCurrency(margemDisponivelAntes)}
+                    </td>
+                    <td className="py-2.5 px-4 font-extrabold text-xs">
+                      {margemDisponivelAntes > 0 ? (
+                        <span className="text-emerald-800 font-black">MARGEM DISPONÍVEL PARA O PLANO</span>
+                      ) : margemDisponivelAntes === 0 ? (
+                        <span className="text-amber-800 font-black">SEM MARGEM SOBRANTE (R$ 0,00)</span>
+                      ) : (
+                        <span className="text-red-700 font-black">DÉFICIT ORÇAMENTÁRIO (SUPERENDIVIDADO)</span>
+                      )}
+                    </td>
                   </tr>
                 </tfoot>
               </table>
