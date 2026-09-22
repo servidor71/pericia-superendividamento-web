@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { MercadoPagoConfig, Payment as MPPayment } from 'mercadopago';
+import { initDatabase, saveSystemData, loadSystemData, getDbStatus } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +13,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+
+// Inicializa a camada de banco de dados
+initDatabase();
 
 // -----------------------------------------------------------------------------
 // 1. INICIALIZAÇÃO SEGURA DO MERCADO PAGO (EVITA 503 EM CASO DE TOKEN AUSENTE)
@@ -42,11 +46,42 @@ const getPaymentClient = () => {
   return paymentClient;
 };
 
+// -----------------------------------------------------------------------------
+// ROTAS DE PERSISTÊNCIA NO BANCO DE DADOS (MYSQL + FALLBACK)
+// -----------------------------------------------------------------------------
+app.get('/api/db-status', (req, res) => {
+  res.json(getDbStatus());
+});
+
+app.get('/api/dados', async (req, res) => {
+  try {
+    const data = await loadSystemData('dados_processo');
+    res.json({ success: true, data: data || null });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err?.message || String(err) });
+  }
+});
+
+app.post('/api/salvar', async (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload) {
+      return res.status(400).json({ success: false, error: 'Corpo da requisição vazio' });
+    }
+    const result = await saveSystemData('dados_processo', payload);
+    res.json({ success: true, storage: result.storage, timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('Erro ao salvar dados no banco:', err);
+    res.status(500).json({ success: false, error: err?.message || String(err) });
+  }
+});
+
 // Rota de Diagnóstico / Health Check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
+    db: getDbStatus(),
     mercadopago: paymentClient ? 'ativo' : 'simulacao',
     env_port: process.env.PORT || 3000
   });

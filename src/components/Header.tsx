@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2 } from 'lucide-react';
+import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2, Database } from 'lucide-react';
 import type { ProcessData, SubscriptionConfig, SubscriptionPlanType } from '../types';
 
 interface HeaderProps {
@@ -12,6 +12,7 @@ interface HeaderProps {
   onExportExcel: () => void;
   onGenerateAIPlan: () => void;
   onProcessOCRData?: (data: any) => void;
+  onSaveToDatabase?: () => Promise<void>;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,10 +24,28 @@ export const Header: React.FC<HeaderProps> = ({
   onExportExcel,
   onGenerateAIPlan,
   onProcessOCRData,
+  onSaveToDatabase,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ocrInputRef = useRef<HTMLInputElement>(null);
   const [ocrSuccess, setOcrSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handleSaveClick = async () => {
+    if (!onSaveToDatabase) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+    try {
+      await onSaveToDatabase();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      alert('Erro ao salvar no banco de dados.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,6 +127,21 @@ export const Header: React.FC<HeaderProps> = ({
               <option value="master">👑 Admin Master (Acesso Ilimitado)</option>
             </select>
           </div>
+
+          {/* Save to Database Button */}
+          <button
+            onClick={handleSaveClick}
+            disabled={isSaving}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-white bg-[#2E7D62] hover:bg-[#256851] border border-[#235d48] rounded-lg transition-all shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
+            title="Salvar todos os dados cadastrados no banco de dados"
+          >
+            {saveSuccess ? (
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 animate-bounce" />
+            ) : (
+              <Database className={`w-3.5 h-3.5 text-emerald-200 ${isSaving ? 'animate-spin' : ''}`} />
+            )}
+            <span>{isSaving ? 'Salvando...' : saveSuccess ? 'Salvo no Banco!' : 'Salvar no Banco'}</span>
+          </button>
 
           <button
             onClick={onNewProcess}

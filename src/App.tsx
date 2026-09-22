@@ -37,7 +37,9 @@ import { Module7LaudoExportacoes } from './components/Module7LaudoExportacoes';
 import type { ProfessionalProfile, ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProcessDocumentItem, SubscriptionConfig, SubscriptionPlanType } from './types';
 import { initialProfessionalProfile, initialProcessData, initialIncomeData, initialExpenseData, initialContracts, initialQuesitos, initialProcessDocuments } from './mockData';
 import { calculateFinancialSummary } from './services/calculations';
+import { useEffect } from 'react';
 import { exportToExcel, exportJSONBackup } from './services/exporters';
+import { saveProcessToDatabase, loadProcessFromDatabase } from './services/apiService';
 import { 
   Globe, 
   LayoutDashboard,
@@ -51,14 +53,36 @@ export function App() {
   const [activeTab, setActiveTab] = useState<number>(1);
 
   // Global Route Listener for Upgrade and Navigation
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const handleNav = (e: any) => {
         if (e.detail) setCurrentRoute(e.detail);
       };
       window.addEventListener('navigate-route', handleNav);
+      return () => window.removeEventListener('navigate-route', handleNav);
     }
-  });
+  }, []);
+
+  // Carrega automaticamente os dados do banco de dados na inicialização
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        const savedData = await loadProcessFromDatabase();
+        if (savedData) {
+          if (savedData.profile) setProfile(savedData.profile);
+          if (savedData.process) setProcess(savedData.process);
+          if (savedData.income) setIncome(savedData.income);
+          if (savedData.expenses) setExpenses(savedData.expenses);
+          if (savedData.contracts) setContracts(savedData.contracts);
+          if (savedData.documents) setDocuments(savedData.documents);
+          console.log('✅ Dados do processo carregados do banco de dados.');
+        }
+      } catch (err) {
+        console.warn('Servidor sem dados prévios no banco.');
+      }
+    }
+    loadInitialData();
+  }, []);
 
   // Core Application State
   const [profile, setProfile] = useState<ProfessionalProfile>(initialProfessionalProfile);
@@ -199,6 +223,22 @@ export function App() {
       alert('Backup importado com sucesso!');
     } catch (err) {
       alert('Erro ao importar arquivo JSON de backup. Formato inválido.');
+    }
+  };
+
+  const handleSaveToDatabase = async () => {
+    const payload = {
+      profile,
+      process,
+      income,
+      expenses,
+      contracts,
+      documents,
+      quesitos,
+    };
+    const res = await saveProcessToDatabase(payload);
+    if (!res.success) {
+      throw new Error(res.error || 'Erro ao salvar no banco');
     }
   };
 
@@ -406,6 +446,7 @@ export function App() {
               onExportExcel={handleExportExcel}
               onGenerateAIPlan={handleGenerateAIPlan}
               onProcessOCRData={handleProcessOCRData}
+              onSaveToDatabase={handleSaveToDatabase}
             />
           </div>
 
