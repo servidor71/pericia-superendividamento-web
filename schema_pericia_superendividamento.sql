@@ -7,6 +7,9 @@
 -- Desativa temporariamente verificações de chave estrangeira durante a criação (MySQL)
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- SELECIONE O SEU BANCO DE DADOS DA HOSTINGER (Substitua u800538042_pericia pelo nome exato do seu banco se necessário)
+-- USE u800538042_pericia;
+
 -- -----------------------------------------------------------------------------
 -- 1. TABELA DE USUÁRIOS E ASSINATURAS (CONTA SAAS)
 -- -----------------------------------------------------------------------------
