@@ -116,6 +116,21 @@ export function App() {
         trialDaysRemaining: 0,
         isTrialExpired: true,
       });
+    } else if (planId === 'master') {
+      setSubscription({
+        planId: 'master',
+        planName: '👑 Administrador Master Supremo (Acesso Ilimitado)',
+        price: 0,
+        maxLaudosMes: 999999,
+        laudosGeradosMes: 0,
+        maxUsers: 9999,
+        activeUsersCount: 1,
+        customLogoAllowed: true,
+        teamManagementAllowed: true,
+        whatsappSupportVip: true,
+        trialDaysRemaining: 999,
+        isTrialExpired: false,
+      });
     } else if (planId === 'individual') {
       setSubscription({
         planId: 'individual',
@@ -358,7 +373,15 @@ export function App() {
       {/* INDEPENDENT ROUTE RENDERING */}
       {currentRoute === 'landing' && <LandingPage onNavigate={setCurrentRoute} onSelectPlan={handleSelectPlan} />}
       {currentRoute === 'cadastro' && <CadastroPage onNavigate={setCurrentRoute} />}
-      {currentRoute === 'login' && <LoginPage onNavigate={setCurrentRoute} />}
+      {currentRoute === 'login' && (
+        <LoginPage
+          onNavigate={setCurrentRoute}
+          onLoginMaster={() => {
+            handleSelectPlan('master');
+            setCurrentRoute('app');
+          }}
+        />
+      )}
       {currentRoute === 'checkout' && <CheckoutPage onNavigate={setCurrentRoute} />}
       {currentRoute === 'admin' && <AdminDashboardPage onNavigate={setCurrentRoute} />}
       {currentRoute === 'contato' && <ContatoPage onNavigate={setCurrentRoute} />}

@@ -105,6 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
               <option value="trial_expired">⛔ Simular 7d Expirado</option>
               <option value="individual">👑 Plano Profissional (R$ 159)</option>
               <option value="escritorio">🏢 Plano Escritório (R$ 299)</option>
+              <option value="master">👑 Admin Master (Acesso Ilimitado)</option>
             </select>
           </div>
 

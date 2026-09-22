@@ -189,7 +189,7 @@ export interface MonetaryIndexItem {
   fonte: string; // Ex: "IBGE / Tabela Bacen 433"
 }
 
-export type SubscriptionPlanType = 'trial' | 'individual' | 'escritorio';
+export type SubscriptionPlanType = 'trial' | 'individual' | 'escritorio' | 'master';
 
 export interface SubscriptionConfig {
   planId: SubscriptionPlanType;

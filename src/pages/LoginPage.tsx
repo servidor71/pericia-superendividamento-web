@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, LogIn, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, LogIn, KeyRound, ArrowLeft, CheckCircle2, Crown, Sparkles } from 'lucide-react';
 
 interface LoginPageProps {
   onNavigate: (route: string) => void;
+  onLoginMaster?: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onLoginMaster }) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -15,12 +16,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
 
+  const fillMasterCredentials = () => {
+    setEmail('admin@periciamaster.com.br');
+    setSenha('AdminMaster2026!');
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !senha) {
       alert('Por favor, preencha o e-mail e a senha de acesso.');
       return;
     }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Verificação de Administrador Master Supremo
+    const isMasterEmail = ['admin@periciamaster.com.br', 'admin@master.com', 'admin@pericia.com', 'admin'].includes(cleanEmail);
+    const isMasterPassword = ['AdminMaster2026!', 'admin123', 'admin', 'master'].includes(senha.trim());
+
+    if (isMasterEmail && isMasterPassword) {
+      alert('👑 Acesso Administrador Master ativado! Você tem acesso ilimitado a todas as funcionalidades.');
+      if (onLoginMaster) {
+        onLoginMaster();
+      } else {
+        onNavigate('app');
+      }
+      return;
+    }
+
     alert(`🔐 Autenticado com sucesso! Bem-vindo de volta, ${email}.`);
     onNavigate('app');
   };
@@ -59,6 +82,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
           <p className="text-xs text-slate-500 font-medium">
             Insira suas credenciais para acessar seus laudos periciais e processos.
           </p>
+        </div>
+
+        {/* Master Admin Card */}
+        <div className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Crown className="w-4 h-4 text-amber-600" />
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                Acesso Administrador Master
+              </span>
+            </div>
+            <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+              Sem Limite
+            </span>
+          </div>
+
+          <div className="text-[11px] text-slate-700 font-medium space-y-1 bg-white/80 p-2.5 rounded-xl border border-amber-200">
+            <div><strong>E-mail:</strong> <code className="text-amber-900 font-mono">admin@periciamaster.com.br</code></div>
+            <div><strong>Senha:</strong> <code className="text-amber-900 font-mono">AdminMaster2026!</code></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={fillMasterCredentials}
+            className="w-full py-2 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
+            <span>Preencher Credenciais Master</span>
+          </button>
         </div>
 
         {/* Login Form */}
