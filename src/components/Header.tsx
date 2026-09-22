@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2, Database } from 'lucide-react';
+import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2, Database, FolderOpen } from 'lucide-react';
 import type { ProcessData, SubscriptionConfig, SubscriptionPlanType } from '../types';
 
 interface HeaderProps {
@@ -13,6 +13,7 @@ interface HeaderProps {
   onGenerateAIPlan: () => void;
   onProcessOCRData?: (data: any) => void;
   onSaveToDatabase?: () => Promise<void>;
+  onOpenProcessList?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onGenerateAIPlan,
   onProcessOCRData,
   onSaveToDatabase,
+  onOpenProcessList,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ocrInputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +129,18 @@ export const Header: React.FC<HeaderProps> = ({
               <option value="master">👑 Admin Master (Acesso Ilimitado)</option>
             </select>
           </div>
+
+          {/* Process Management Page Button */}
+          {onOpenProcessList && (
+            <button
+              onClick={onOpenProcessList}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-[#1C4E5E] bg-[#E7F3EE] hover:bg-[#D5EADF] border border-[#C5E2D6] rounded-lg transition-all shadow-2xs cursor-pointer"
+              title="Ver e gerenciar todos os processos cadastrados"
+            >
+              <FolderOpen className="w-3.5 h-3.5 text-[#1C4E5E]" />
+              <span>Meus Processos</span>
+            </button>
+          )}
 
           {/* Save to Database Button */}
           <button

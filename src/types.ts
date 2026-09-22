@@ -32,6 +32,7 @@ export interface ProcessDocumentItem {
 }
 
 export interface ProcessData {
+  id?: string;
   numeroProcesso: string;
   classeProcessual: string;
   tribunal: string;

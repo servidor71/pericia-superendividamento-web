@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { MercadoPagoConfig, Payment as MPPayment } from 'mercadopago';
-import { initDatabase, saveSystemData, loadSystemData, getDbStatus } from './db.js';
+import { initDatabase, saveSystemData, loadSystemData, getDbStatus, listAllProcesses, loadProcessById, deleteProcessById } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +72,42 @@ app.post('/api/salvar', async (req, res) => {
     res.json({ success: true, storage: result.storage, timestamp: new Date().toISOString() });
   } catch (err) {
     console.error('Erro ao salvar dados no banco:', err);
+    res.status(500).json({ success: false, error: err?.message || String(err) });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// GESTÃO INDIVIDUAL DE PROCESSOS (LISTAR, DETALHAR E EXCLUIR)
+// -----------------------------------------------------------------------------
+app.get('/api/processos', async (req, res) => {
+  try {
+    const processos = await listAllProcesses();
+    res.json({ success: true, processos });
+  } catch (err) {
+    console.error('Erro ao listar processos:', err);
+    res.status(500).json({ success: false, error: err?.message || String(err) });
+  }
+});
+
+app.get('/api/processos/:id', async (req, res) => {
+  try {
+    const data = await loadProcessById(req.params.id);
+    if (!data) {
+      return res.status(404).json({ success: false, error: 'Processo não encontrado' });
+    }
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error(`Erro ao carregar processo [${req.params.id}]:`, err);
+    res.status(500).json({ success: false, error: err?.message || String(err) });
+  }
+});
+
+app.delete('/api/processos/:id', async (req, res) => {
+  try {
+    const result = await deleteProcessById(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error(`Erro ao excluir processo [${req.params.id}]:`, err);
     res.status(500).json({ success: false, error: err?.message || String(err) });
   }
 });

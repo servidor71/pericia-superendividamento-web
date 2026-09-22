@@ -13,6 +13,7 @@ import { LGPDPage } from './pages/LGPDPage';
 import { SobrePage } from './pages/SobrePage';
 import { SuportePage } from './pages/SuportePage';
 import { TermosUsoPage } from './pages/TermosUsoPage';
+import { GerenciarProcessosPage } from './pages/GerenciarProcessosPage';
 
 import { ModulePerfilProfissional } from './components/ModulePerfilProfissional';
 import { Module1DevedorProcesso } from './components/Module1DevedorProcesso';
@@ -209,6 +210,19 @@ export function App() {
       setContracts(initialContracts);
       setDocuments(initialProcessDocuments);
       setActiveTab(1);
+    }
+  };
+
+  const handleOpenProcessFromList = (savedData: any) => {
+    if (savedData) {
+      if (savedData.profile) setProfile(savedData.profile);
+      if (savedData.process) setProcess(savedData.process);
+      if (savedData.income) setIncome(savedData.income);
+      if (savedData.expenses) setExpenses(savedData.expenses);
+      if (savedData.contracts) setContracts(savedData.contracts);
+      if (savedData.documents) setDocuments(savedData.documents);
+      setActiveTab(2);
+      setCurrentRoute('app');
     }
   };
 
@@ -429,6 +443,20 @@ export function App() {
       {currentRoute === 'sobre' && <SobrePage onNavigate={setCurrentRoute} />}
       {currentRoute === 'suporte' && <SuportePage onNavigate={setCurrentRoute} />}
       {currentRoute === 'termos' && <TermosUsoPage onNavigate={setCurrentRoute} />}
+      {currentRoute === 'processos' && (
+        <GerenciarProcessosPage
+          onNavigate={setCurrentRoute}
+          onOpenProcess={handleOpenProcessFromList}
+          onNewProcess={() => {
+            setProcess(initialProcessData);
+            setIncome(initialIncomeData);
+            setExpenses(initialExpenseData);
+            setContracts(initialContracts);
+            setDocuments(initialProcessDocuments);
+            setActiveTab(1);
+          }}
+        />
+      )}
 
       {/* PLATAFORMA PERICIAL (COMPLETA COM OS 19 MÓDULOS) */}
       {currentRoute === 'app' && (
@@ -447,6 +475,7 @@ export function App() {
               onGenerateAIPlan={handleGenerateAIPlan}
               onProcessOCRData={handleProcessOCRData}
               onSaveToDatabase={handleSaveToDatabase}
+              onOpenProcessList={() => setCurrentRoute('processos')}
             />
           </div>
 

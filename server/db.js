@@ -330,7 +330,10 @@ export async function saveSystemData(key, data) {
 
       // C. Salva Processo Principal
       const procNum = (process?.numeroProcesso || '0000000-00.2026.8.07.0001').replace(/[^a-zA-Z0-9-.]/g, '_');
-      const procId = `proc_${procNum}`;
+      const procId = process?.id || `proc_${procNum}`;
+      if (process && !process.id) {
+        process.id = procId;
+      }
 
       if (process) {
         await dbPool.query(
@@ -576,6 +579,327 @@ export async function loadSystemData(key) {
   }
 
   return null;
+}
+
+// -----------------------------------------------------------------------------
+// GESTÃO INDIVIDUAL DE PROCESSOS (LISTAR, CARREGAR POR ID, EXCLUIR)
+// -----------------------------------------------------------------------------
+
+export async function listAllProcesses() {
+  const processList = [];
+
+  // 1. Tenta buscar do MySQL
+  if (dbPool && isMySqlConnected) {
+    try {
+      const [rows] = await dbPool.query(`
+        SELECT 
+          p.id,
+          p.numero_processo as numeroProcesso,
+          p.classe_processual as classeProcessual,
+          p.tribunal,
+          p.comarca,
+          p.vara,
+          p.magistrado,
+          p.cidade_uf as cidadeUf,
+          p.nome_devedor as nomeDevedor,
+          p.cpf_cnpj_devedor as cpfCnpjDevedor,
+          p.profissao,
+          p.status_processo as statusProcesso,
+          p.data_pericia as dataPericia,
+          p.criado_em as criadoEm,
+          p.atualizado_em as atualizadoEm,
+          (SELECT COUNT(*) FROM contratos_bancarios cb WHERE cb.processo_id = p.id) as qtdContratos,
+          (SELECT COALESCE(SUM(cb.valor_final_contrato), 0) FROM contratos_bancarios cb WHERE cb.processo_id = p.id) as valorTotalContratos
+        FROM processos p
+        ORDER BY p.atualizado_em DESC
+      `);
+
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map(r => ({
+          ...r,
+          dataPericia: r.dataPericia ? new Date(r.dataPericia).toISOString().split('T')[0] : '',
+          qtdContratos: Number(r.qtdContratos || 0),
+          valorTotalContratos: Number(r.valorTotalContratos || 0)
+        }));
+      }
+    } catch (err) {
+      console.error('Erro ao listar processos do MySQL:', err?.message || err);
+    }
+  }
+
+  // 2. Fallback: buscar do arquivo JSON local (e dados_sistema)
+  try {
+    if (fs.existsSync(JSON_DB_PATH)) {
+      const content = fs.readFileSync(JSON_DB_PATH, 'utf-8');
+      const parsed = JSON.parse(content);
+      
+      Object.keys(parsed).forEach(k => {
+        if (k.startsWith('dados_processo') || k.startsWith('proc_')) {
+          const item = parsed[k];
+          if (item && item.process) {
+            const proc = item.process;
+            const contracts = item.contracts || [];
+            const procId = proc.id || k.replace('dados_processo_', '');
+            processList.push({
+              id: procId,
+              numeroProcesso: proc.numeroProcesso || 'Sem número',
+              nomeDevedor: proc.nomeDevedor || 'Devedor não identificado',
+              cpfCnpjDevedor: proc.cpfCnpj || '',
+              tribunal: proc.tribunal || '',
+              comarca: proc.comarca || '',
+              vara: proc.vara || '',
+              statusProcesso: proc.statusProcesso || 'Em Análise',
+              dataPericia: proc.dataPericia || '',
+              atualizadoEm: parsed.last_updated || new Date().toISOString(),
+              qtdContratos: Array.isArray(contracts) ? contracts.length : 0,
+              valorTotalContratos: Array.isArray(contracts) 
+                ? contracts.reduce((acc, c) => acc + Number(c.valorFinalContrato || 0), 0) 
+                : 0
+            });
+          }
+        }
+      });
+
+      // Se só houver 'dados_processo' padrão no JSON sem prefixo específico
+      if (processList.length === 0 && parsed['dados_processo'] && parsed['dados_processo'].process) {
+        const item = parsed['dados_processo'];
+        const proc = item.process;
+        const contracts = item.contracts || [];
+        const procId = proc.id || 'proc_default';
+        processList.push({
+          id: procId,
+          numeroProcesso: proc.numeroProcesso || '0000000-00.2026.8.07.0001',
+          nomeDevedor: proc.nomeDevedor || 'Devedor Principal',
+          cpfCnpjDevedor: proc.cpfCnpj || '',
+          tribunal: proc.tribunal || '',
+          comarca: proc.comarca || '',
+          vara: proc.vara || '',
+          statusProcesso: proc.statusProcesso || 'Em Análise',
+          dataPericia: proc.dataPericia || '',
+          atualizadoEm: parsed.last_updated || new Date().toISOString(),
+          qtdContratos: Array.isArray(contracts) ? contracts.length : 0,
+          valorTotalContratos: Array.isArray(contracts) 
+            ? contracts.reduce((acc, c) => acc + Number(c.valorFinalContrato || 0), 0) 
+            : 0
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao ler processos do JSON local:', err);
+  }
+
+  return processList;
+}
+
+export async function loadProcessById(procId) {
+  if (!procId) return null;
+
+  // 1. Tenta carregar do MySQL Relacional
+  if (dbPool && isMySqlConnected) {
+    try {
+      const [pRows] = await dbPool.query(
+        `SELECT * FROM processos WHERE id = ? OR numero_processo = ? LIMIT 1`,
+        [procId, procId]
+      );
+
+      if (Array.isArray(pRows) && pRows.length > 0) {
+        const p = pRows[0];
+        const actualProcId = p.id;
+
+        // Rendas
+        const [rRows] = await dbPool.query(`SELECT * FROM rendas_processo WHERE processo_id = ? LIMIT 1`, [actualProcId]);
+        const r = rRows[0] || {};
+
+        // Despesas
+        const [dRows] = await dbPool.query(`SELECT * FROM despesas_essenciais WHERE processo_id = ? LIMIT 1`, [actualProcId]);
+        const d = dRows[0] || {};
+
+        // Contratos
+        const [cRows] = await dbPool.query(`SELECT * FROM contratos_bancarios WHERE processo_id = ?`, [actualProcId]);
+
+        // Quesitos
+        const [qRows] = await dbPool.query(`SELECT * FROM quesitos_periciais WHERE processo_id = ? ORDER BY ordem ASC`, [actualProcId]);
+
+        // Documentos
+        const [docRows] = await dbPool.query(`SELECT * FROM documentos_processo WHERE processo_id = ?`, [actualProcId]);
+
+        // Perfil Master
+        const [profRows] = await dbPool.query(`SELECT * FROM perfis_profissionais WHERE usuario_id = 'usr_master' LIMIT 1`);
+        const prof = profRows[0] || {};
+
+        return {
+          profile: {
+            nomeProfissional: prof.nome_profissional || '',
+            papel: prof.papel || 'Perito Judicial',
+            registroProfissional: prof.registro_profissional || '',
+            cpfCnpj: prof.cpf_cnpj || '',
+            nomeEscritorioEmpresa: prof.nome_escritorio_empresa || '',
+            email: prof.email || '',
+            telefoneWhatsapp: prof.telefone_whatsapp || '',
+            enderecoComercial: prof.endereco_comercial || '',
+            cidadeUf: prof.cidade_uf || '',
+            logomarcaUrl: prof.logomarca_url || null,
+          },
+          process: {
+            id: p.id,
+            numeroProcesso: p.numero_processo || '',
+            classeProcessual: p.classe_processual || '',
+            tribunal: p.tribunal || '',
+            comarca: p.comarca || '',
+            vara: p.vara || '',
+            magistrado: p.magistrado || '',
+            cidadeUf: p.cidade_uf || '',
+            nomeDevedor: p.nome_devedor || '',
+            cpfCnpj: p.cpf_cnpj_devedor || '',
+            profissao: p.profissao || '',
+            vinculoEmpregaticio: p.vinculo_empregaticio || '',
+            empregador: p.empregador || '',
+            peritoDesignado: p.perito_designado || '',
+            registroProfissional: p.registro_profissional || '',
+            prazoPlanoMeses: p.prazo_plano_meses || 60,
+            dataPericia: p.data_pericia ? new Date(p.data_pericia).toISOString().split('T')[0] : '',
+            statusProcesso: p.status_processo || 'Em Análise',
+          },
+          income: {
+            salarioBruto: Number(r.salario_bruto || 0),
+            rppsInss: Number(r.rpps_inss || 0),
+            irrf: Number(r.irrf || 0),
+            pensaoAlimenticia: Number(r.pensao_alimenticia || 0),
+            planoSaudeFolha: Number(r.plano_saude_folha || 0),
+            outrasDeducoesLegais: Number(r.outras_deducoes_legais || 0),
+          },
+          expenses: {
+            moradia: Number(d.moradia || 0),
+            alimentacao: Number(d.alimentacao || 0),
+            saudeMedicamentos: Number(d.saude_medicamentos || 0),
+            transporte: Number(d.transporte || 0),
+            educacaoDependentes: Number(d.educacao_dependentes || 0),
+            outrasDespesasEssenciais: Number(d.outras_despesas_essenciais || 0),
+            minimoExistencialConfig: Number(d.minimo_existencial_config || 1621),
+            justificativaMinimoExistencial: d.justificativa_minimo_existencial || '',
+            fonteMoradia: d.fonte_moradia || '',
+            fonteAlimentacao: d.fonte_alimentacao || '',
+            fonteSaude: d.fonte_saude || '',
+            fonteTransporte: d.fonte_transporte || '',
+            fonteEducacao: d.fonte_educacao || '',
+            fonteOutrasDespesas: d.fonte_outras_despesas || '',
+          },
+          contracts: (cRows || []).map(c => ({
+            id: c.id,
+            credor: c.credor || '',
+            numeroContrato: c.numero_contrato || '',
+            modalidade: c.modalidade || '',
+            dataContrato: c.data_contrato ? new Date(c.data_contrato).toISOString().split('T')[0] : '',
+            vencimentoFinal: c.vencimento_final ? new Date(c.vencimento_final).toISOString().split('T')[0] : '',
+            valorLiberadoContrato: Number(c.valor_liberado_contrato || 0),
+            valorFinalContrato: Number(c.valor_final_contrato || 0),
+            valorIOF: Number(c.valor_iof || 0),
+            qtdParcelasTotal: Number(c.qtd_parcelas_total || 0),
+            qtdParcelasPagas: Number(c.qtd_parcelas_pagas || 0),
+            qtdParcelasRestantes: Number(c.qtd_parcelas_restantes || 0),
+            valorParcelaAtual: Number(c.valor_parcela_atual || 0),
+            taxaJurosMes: Number(c.taxa_juros_mes || 0),
+            taxaJurosAno: Number(c.taxa_juros_ano || 0),
+            cetMes: Number(c.cet_mes || 0),
+            cetAno: Number(c.cet_ano || 0),
+            temSeguroPrestamista: Boolean(c.tem_seguro_prestamista),
+            valorSeguroPrestamista: Number(c.valor_seguro_prestamista || 0),
+            temTarifasAbusivas: Boolean(c.tem_tarifas_abusivas),
+            valorTarifasAbusivas: Number(c.valor_tarifas_abusivas || 0),
+            expurgarAbusividades: Boolean(c.expurgar_abusividades),
+            tipoIndiceCorrecao: c.tipo_indice_correcao || 'INPC',
+            fatorCorrecao7Casas: Number(c.fator_correcao_7casas || 1.0),
+            dataReferenciaUltimoPagamento: c.data_referencia_ultimo_pagamento ? new Date(c.data_referencia_ultimo_pagamento).toISOString().split('T')[0] : '',
+            saldoDevedorRefUltimaParcela: Number(c.saldo_devedor_ref_ultima_parcela || 0),
+            taxaMediaBacenMes: Number(c.taxa_media_bacen_mes || 0),
+          })),
+          quesitos: (qRows || []).map(q => ({
+            id: q.id,
+            origem: q.origem,
+            pergunta: q.pergunta,
+            respostaTecnica: q.resposta_tecnica
+          })),
+          documents: (docRows || []).map(doc => ({
+            id: doc.id,
+            categoria: doc.categoria,
+            tipoDocumento: doc.tipo_documento,
+            nomeArquivo: doc.nome_arquivo,
+            tamanhoArquivo: doc.tamanho_arquivo,
+            idPaginaReferencia: doc.id_pagina_referencia,
+            observacao: doc.observacao,
+            rawTextContent: doc.raw_text_content
+          }))
+        };
+      }
+    } catch (err) {
+      console.error(`Erro ao carregar processo [${procId}] do MySQL:`, err?.message || err);
+    }
+  }
+
+  // 2. Fallback: carregar do JSON local
+  try {
+    if (fs.existsSync(JSON_DB_PATH)) {
+      const content = fs.readFileSync(JSON_DB_PATH, 'utf-8');
+      const parsed = JSON.parse(content);
+
+      const keyDirect = `dados_processo_${procId}`;
+      if (parsed[keyDirect]) return parsed[keyDirect];
+      if (parsed[procId]) return parsed[procId];
+      if (parsed['dados_processo']) return parsed['dados_processo'];
+    }
+  } catch (err) {
+    console.error(`Erro ao ler processo [${procId}] do JSON local:`, err);
+  }
+
+  return null;
+}
+
+export async function deleteProcessById(procId) {
+  if (!procId) return { success: false, error: 'ID do processo não fornecido' };
+
+  let deleted = false;
+
+  if (dbPool && isMySqlConnected) {
+    try {
+      const [res] = await dbPool.query(
+        `DELETE FROM processos WHERE id = ? OR numero_processo = ?`,
+        [procId, procId]
+      );
+      await dbPool.query(
+        `DELETE FROM dados_sistema WHERE id = ? OR id = ?`,
+        [procId, `dados_processo_${procId}`]
+      );
+      if (res.affectedRows > 0) deleted = true;
+    } catch (err) {
+      console.error(`Erro ao excluir processo [${procId}] do MySQL:`, err?.message || err);
+    }
+  }
+
+  try {
+    if (fs.existsSync(JSON_DB_PATH)) {
+      const content = fs.readFileSync(JSON_DB_PATH, 'utf-8');
+      const parsed = JSON.parse(content);
+      
+      const keysToDelete = [
+        procId,
+        `dados_processo_${procId}`,
+        `proc_${procId}`
+      ];
+
+      keysToDelete.forEach(k => {
+        if (parsed[k]) {
+          delete parsed[k];
+          deleted = true;
+        }
+      });
+
+      fs.writeFileSync(JSON_DB_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
+    }
+  } catch (err) {
+    console.error(`Erro ao excluir processo [${procId}] do JSON local:`, err);
+  }
+
+  return { success: true, deleted };
 }
 
 export function getDbStatus() {
