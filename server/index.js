@@ -231,7 +231,7 @@ let targetDist = candidateDistPaths.find(p => fs.existsSync(p) && fs.existsSync(
 if (targetDist) {
   console.log(`📁 Servindo arquivos estáticos de: ${targetDist}`);
   app.use(express.static(targetDist));
-  app.get('*', (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(targetDist, 'index.html'));
   });
