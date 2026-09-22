@@ -204,6 +204,7 @@ async function createTablesIfNotExist() {
         numero_contrato VARCHAR(100) NOT NULL,
         modalidade VARCHAR(100) NOT NULL,
         data_contrato DATE,
+        data_primeira_parcela DATE,
         vencimento_final DATE,
         valor_liberado_contrato DECIMAL(15, 2) DEFAULT 0.00,
         valor_final_contrato DECIMAL(15, 2) DEFAULT 0.00,
@@ -231,6 +232,12 @@ async function createTablesIfNotExist() {
         FOREIGN KEY (processo_id) REFERENCES processos(id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    try {
+      await dbPool.query(`ALTER TABLE contratos_bancarios ADD COLUMN data_primeira_parcela DATE;`);
+    } catch (e) {
+      // Coluna já existe
+    }
 
     // 8. Tabela de Quesitos Periciais
     await dbPool.query(`
@@ -435,18 +442,19 @@ export async function saveSystemData(key, data) {
           const contractId = c.id ? `ctr_${c.id}` : `ctr_${Date.now()}_${Math.random().toString(36).substring(7)}`;
           await dbPool.query(
             `INSERT INTO contratos_bancarios (
-              id, processo_id, credor, numero_contrato, modalidade, data_contrato, vencimento_final,
+              id, processo_id, credor, numero_contrato, modalidade, data_contrato, data_primeira_parcela, vencimento_final,
               valor_liberado_contrato, valor_final_contrato, valor_iof, qtd_parcelas_total, qtd_parcelas_pagas,
               qtd_parcelas_restantes, valor_parcela_atual, taxa_juros_mes, taxa_juros_ano, cet_mes, cet_ano,
               tem_seguro_prestamista, valor_seguro_prestamista, tem_tarifas_abusivas, valor_tarifas_abusivas,
               expurgar_abusividades, tipo_indice_correcao, fator_correcao_7casas, data_referencia_ultimo_pagamento,
               saldo_devedor_ref_ultima_parcela, taxa_media_bacen_mes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
               credor = VALUES(credor),
               numero_contrato = VALUES(numero_contrato),
               modalidade = VALUES(modalidade),
               data_contrato = VALUES(data_contrato),
+              data_primeira_parcela = VALUES(data_primeira_parcela),
               vencimento_final = VALUES(vencimento_final),
               valor_liberado_contrato = VALUES(valor_liberado_contrato),
               valor_final_contrato = VALUES(valor_final_contrato),
@@ -471,7 +479,7 @@ export async function saveSystemData(key, data) {
               taxa_media_bacen_mes = VALUES(taxa_media_bacen_mes)`,
             [
               contractId, procId, c.credor || 'Banco', c.numeroContrato || '000000', c.modalidade || 'Empréstimo',
-              parseSqlDate(c.dataContrato), parseSqlDate(c.vencimentoFinal),
+              parseSqlDate(c.dataContrato), parseSqlDate(c.dataPrimeiraParcela), parseSqlDate(c.vencimentoFinal),
               Number(c.valorLiberadoContrato || 0), Number(c.valorFinalContrato || 0), Number(c.valorIOF || 0),
               Number(c.qtdParcelasTotal || 0), Number(c.qtdParcelasPagas || 0), Number(c.qtdParcelasRestantes || 0),
               Number(c.valorParcelaAtual || 0), Number(c.taxaJurosMes || 0), Number(c.taxaJurosAno || 0),
@@ -790,6 +798,7 @@ export async function loadProcessById(procId) {
             numeroContrato: c.numero_contrato || '',
             modalidade: c.modalidade || '',
             dataContrato: c.data_contrato ? new Date(c.data_contrato).toISOString().split('T')[0] : '',
+            dataPrimeiraParcela: c.data_primeira_parcela ? new Date(c.data_primeira_parcela).toISOString().split('T')[0] : '',
             vencimentoFinal: c.vencimento_final ? new Date(c.vencimento_final).toISOString().split('T')[0] : '',
             valorLiberadoContrato: Number(c.valor_liberado_contrato || 0),
             valorFinalContrato: Number(c.valor_final_contrato || 0),

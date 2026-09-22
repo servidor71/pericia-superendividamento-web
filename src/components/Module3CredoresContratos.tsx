@@ -10,6 +10,15 @@ interface Module3Props {
   onContractsChange: (updated: Contract[]) => void;
 }
 
+const formatDateDisplay = (dateStr?: string) => {
+  if (!dateStr || dateStr === '—' || dateStr.trim() === '') return '—';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  return dateStr;
+};
+
 export const Module3CredoresContratos: React.FC<Module3Props> = ({ contracts, onContractsChange }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isEditingAll, setIsEditingAll] = useState(false);
@@ -22,6 +31,7 @@ export const Module3CredoresContratos: React.FC<Module3Props> = ({ contracts, on
       numeroContrato: '',
       modalidade: 'Consignado Folha',
       dataContrato: new Date().toISOString().split('T')[0],
+      dataPrimeiraParcela: '',
       vencimentoFinal: '',
       valorLiberadoContrato: 0,
       valorFinalContrato: 0,
@@ -167,13 +177,16 @@ export const Module3CredoresContratos: React.FC<Module3Props> = ({ contracts, on
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs min-w-[1650px]">
+          <table className="w-full text-left border-collapse text-xs min-w-[1950px]">
             <thead>
               <tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-extrabold uppercase text-[10px]">
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[200px] w-[200px]">Credor / Instituição</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[150px] w-[150px]">N.º Contrato / CCB</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[210px] w-[210px]">Modalidade</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[130px]">Vlr. Liberado Contrato</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[180px] w-[180px]">Credor / Instituição</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[140px] w-[140px]">N.º Contrato / CCB</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[180px] w-[180px]">Modalidade</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[130px]">Data do Contrato</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[130px]">Data 1.ª Parcela</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[130px]">Data Última Parcela</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[130px]">Vlr. Contratado</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[130px]">Vlr. Final Contrato</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[100px]">Vlr. IOF</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center min-w-[75px]">Total Parc.</th>
@@ -195,7 +208,7 @@ export const Module3CredoresContratos: React.FC<Module3Props> = ({ contracts, on
                   <tr key={c.id} className="hover:bg-slate-50 transition-colors font-normal text-slate-800">
                     
                     {/* Credor */}
-                    <td className="py-3 px-3 font-normal text-slate-900 min-w-[200px] w-[200px]">
+                    <td className="py-3 px-3 font-normal text-slate-900 min-w-[180px] w-[180px]">
                       {isEditing ? (
                         <input
                           type="text"
@@ -241,7 +254,49 @@ export const Module3CredoresContratos: React.FC<Module3Props> = ({ contracts, on
                       )}
                     </td>
 
-                    {/* Vlr. Liberado Contrato (Fonte normal) */}
+                    {/* Data do Contrato */}
+                    <td className="py-3 px-3 text-center font-normal text-slate-800">
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          value={c.dataContrato || ''}
+                          onChange={(e) => handleUpdateContract(c.id, 'dataContrato', e.target.value)}
+                          className="w-[120px] px-1.5 py-1 border border-slate-300 rounded text-xs text-center font-normal"
+                        />
+                      ) : (
+                        formatDateDisplay(c.dataContrato)
+                      )}
+                    </td>
+
+                    {/* Data 1.ª Parcela */}
+                    <td className="py-3 px-3 text-center font-normal text-slate-800">
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          value={c.dataPrimeiraParcela || ''}
+                          onChange={(e) => handleUpdateContract(c.id, 'dataPrimeiraParcela', e.target.value)}
+                          className="w-[120px] px-1.5 py-1 border border-slate-300 rounded text-xs text-center font-normal"
+                        />
+                      ) : (
+                        formatDateDisplay(c.dataPrimeiraParcela)
+                      )}
+                    </td>
+
+                    {/* Data Última Parcela */}
+                    <td className="py-3 px-3 text-center font-normal text-slate-800">
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          value={c.vencimentoFinal || ''}
+                          onChange={(e) => handleUpdateContract(c.id, 'vencimentoFinal', e.target.value)}
+                          className="w-[120px] px-1.5 py-1 border border-slate-300 rounded text-xs text-center font-normal"
+                        />
+                      ) : (
+                        formatDateDisplay(c.vencimentoFinal)
+                      )}
+                    </td>
+
+                    {/* Vlr. Contratado (Fonte normal) */}
                     <td className="py-3 px-3 text-right font-normal text-slate-900">
                       {isEditing ? (
                         <CurrencyInput

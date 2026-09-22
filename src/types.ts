@@ -127,7 +127,8 @@ export interface Contract {
   numeroContrato: string;
   modalidade: string; // Consignado Público, Crédito Pessoal, Cartão Parcelado, Antecipação 13º, Cheque Especial
   dataContrato: string;
-  vencimentoFinal: string;
+  dataPrimeiraParcela?: string; // Data da 1ª Parcela (AAAA-MM-DD)
+  vencimentoFinal: string; // Data da Última Parcela / Vencimento Final (AAAA-MM-DD)
   
   // Valores do Contrato
   valorLiberadoContrato: number; // Vlr. Liberado Contrato (R$)
