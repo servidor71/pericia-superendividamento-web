@@ -58,20 +58,57 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
   // Total das Prestações Pagas até a Data de Referência
   const prestPagasTotal = prestacaoAtual * parcelasPagas;
 
+  // Helper de formatação visual de datas
+  const formatDateDisplay = (dateStr?: string) => {
+    if (!dateStr || dateStr === '—' || dateStr.trim() === '') return '—';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+    return dateStr;
+  };
+
+  // Helper de cálculo de datas para a tabela de cronograma
+  function computeScheduleDate(n: number, dtContratoStr: string, dt1aParcStr?: string) {
+    if (n === 0) {
+      return formatDateDisplay(dtContratoStr);
+    }
+
+    if (dt1aParcStr && dt1aParcStr.trim() !== '') {
+      const parts = dt1aParcStr.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0]) || 2022;
+        const m = (parseInt(parts[1]) || 1) - 1 + (n - 1);
+        const d = parseInt(parts[2]) || 10;
+        const dt = new Date(y, m, d);
+        const dayStr = String(dt.getDate()).padStart(2, '0');
+        const monthStr = String(dt.getMonth() + 1).padStart(2, '0');
+        return `${dayStr}/${monthStr}/${dt.getFullYear()}`;
+      }
+    }
+
+    const parts = (dtContratoStr || '2022-10-10').split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0]) || 2022;
+      const m = (parseInt(parts[1]) || 10) - 1 + n;
+      const d = parseInt(parts[2]) || 10;
+      const dt = new Date(y, m, d);
+      const dayStr = String(dt.getDate()).padStart(2, '0');
+      const monthStr = String(dt.getMonth() + 1).padStart(2, '0');
+      return `${dayStr}/${monthStr}/${dt.getFullYear()}`;
+    }
+    return dtContratoStr;
+  }
+
   // Tabela de Evolução da Amortização Mês a Mês
   let currentSD = valorPrincipal;
   const iContrato = taxaJurosAm / 100;
   const scheduleRows = [];
 
-  const baseDateParts = dataContrato.split('-');
-  const startYear = parseInt(baseDateParts[0]) || 2021;
-  const startMonth = (parseInt(baseDateParts[1]) || 6) - 1;
-  const startDay = parseInt(baseDateParts[2]) || 8;
-
-  // Linha 0 (n = 0: Liberação do Crédito)
+  // Linha 0 (n = 0: Liberação do Crédito / Assinatura do Contrato)
   scheduleRows.push({
     n: 0,
-    dataStr: formatDate(startYear, startMonth, startDay),
+    dataStr: computeScheduleDate(0, dataContrato, activeContract.dataPrimeiraParcela),
     sd: valorPrincipal,
     juros: 0,
     amort: 0,
@@ -83,7 +120,7 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
     const amortMes = prestacaoAtual - jurosMes;
     const nextSD = Math.max(0, currentSD - amortMes);
 
-    const currentDateStr = formatDate(startYear, startMonth + n, startDay);
+    const currentDateStr = computeScheduleDate(n, dataContrato, activeContract.dataPrimeiraParcela);
     const isPaid = n <= parcelasPagas;
 
     scheduleRows.push({
@@ -101,14 +138,6 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
   // Saldo Devedor apurado exatamente na parcela N pagas
   const saldoDevedorNaParcelaPaga = scheduleRows[parcelasPagas]?.sd || (valorPrincipal - (prestacaoAtual * parcelasPagas * 0.4));
   const saldoDevedorAtualizado = saldoDevedorNaParcelaPaga * fatorCorrecao;
-
-  function formatDate(y: number, m: number, d: number) {
-    const dateObj = new Date(y, m, d);
-    const dayStr = String(dateObj.getDate()).padStart(2, '0');
-    const monthStr = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const yearStr = dateObj.getFullYear();
-    return `${dayStr}/${monthStr}/${yearStr}`;
-  }
 
   // Sincronizar o Saldo Devedor Apurado no Estado Global do Contrato
   const handleApplyCalculatedBalance = () => {
@@ -233,9 +262,9 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
               )}
             </div>
 
-            {/* Valor Principal */}
+            {/* Valor Contratado (Substitui Valor Principal) */}
             <div className="flex justify-between items-center py-1 border-b border-slate-200">
-              <span className="font-bold text-slate-900">Valor Principal:</span>
+              <span className="font-bold text-slate-900">Valor Contratado:</span>
               {isEditing ? (
                 <CurrencyInput
                   value={valorPrincipal}
@@ -306,7 +335,37 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
                   className="w-32 text-right px-2 py-0.5 border border-slate-300 rounded font-normal text-slate-900 bg-white text-xs"
                 />
               ) : (
-                <span className="font-normal font-mono">{dataContrato}</span>
+                <span className="font-normal font-mono">{formatDateDisplay(dataContrato)}</span>
+              )}
+            </div>
+
+            {/* Data 1.ª Parcela */}
+            <div className="flex justify-between items-center py-1 border-b border-slate-200">
+              <span className="font-bold text-slate-900">Data 1.ª Parcela:</span>
+              {isEditing ? (
+                <input
+                  type="date"
+                  value={activeContract.dataPrimeiraParcela || ''}
+                  onChange={(e) => handleUpdateActiveField('dataPrimeiraParcela', e.target.value)}
+                  className="w-32 text-right px-2 py-0.5 border border-slate-[#DCD8CD] rounded font-normal text-slate-900 bg-white text-xs"
+                />
+              ) : (
+                <span className="font-normal font-mono">{formatDateDisplay(activeContract.dataPrimeiraParcela)}</span>
+              )}
+            </div>
+
+            {/* Data Última Parcela */}
+            <div className="flex justify-between items-center py-1 border-b border-slate-200">
+              <span className="font-bold text-slate-900">Data Última Parcela:</span>
+              {isEditing ? (
+                <input
+                  type="date"
+                  value={activeContract.vencimentoFinal || ''}
+                  onChange={(e) => handleUpdateActiveField('vencimentoFinal', e.target.value)}
+                  className="w-32 text-right px-2 py-0.5 border border-slate-[#DCD8CD] rounded font-normal text-slate-900 bg-white text-xs"
+                />
+              ) : (
+                <span className="font-normal font-mono">{formatDateDisplay(activeContract.vencimentoFinal)}</span>
               )}
             </div>
 
