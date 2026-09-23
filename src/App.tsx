@@ -269,7 +269,7 @@ export function App() {
   };
 
   const handleExportExcel = () => {
-    exportToExcel(process, income, expenses, contracts, quesitos);
+    exportToExcel(process, income, expenses, contracts, quesitos, profile, documents);
   };
 
   const handleGenerateAIPlan = () => {
