@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2, Database, FolderOpen, Upload } from 'lucide-react';
 import type { ProcessData, SubscriptionConfig, SubscriptionPlanType } from '../types';
 import { parseExcelBackup } from '../services/excelImporter';
+import { saveProcessToDatabase } from '../services/apiService';
 
 interface HeaderProps {
   process: ProcessData;
@@ -58,10 +59,12 @@ export const Header: React.FC<HeaderProps> = ({
       try {
         const parsed = await parseExcelBackup(file);
         onImportJSON(parsed);
-        if (onSaveToDatabase) {
-          await onSaveToDatabase();
-        }
-        alert('✅ Planilha Excel (.xlsx) restaurada com sucesso! Todos os processos, contratos e valores foram recarregados e salvos no banco.');
+        await saveProcessToDatabase(parsed);
+
+        const numContracts = Array.isArray(parsed.contracts) ? parsed.contracts.length : 0;
+        const nomeDevedor = parsed.process?.nomeDevedor || 'Devedor';
+
+        alert(`✅ Planilha Excel (.xlsx) restaurada com sucesso!\n\n• Devedor: ${nomeDevedor}\n• Contratos Recuperados: ${numContracts}\n• Salvo no Banco Hostinger!`);
       } catch (err: any) {
         alert('Erro ao importar planilha Excel: ' + (err?.message || err));
       }
@@ -71,9 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
         try {
           const parsed = JSON.parse(event.target?.result as string);
           onImportJSON(parsed);
-          if (onSaveToDatabase) {
-            await onSaveToDatabase();
-          }
+          await saveProcessToDatabase(parsed);
           alert('✅ Backup JSON restaurado com sucesso!');
         } catch (err) {
           alert('Erro ao carregar o arquivo. Certifique-se de selecionar um backup JSON ou planilha XLSX gerada pelo sistema.');

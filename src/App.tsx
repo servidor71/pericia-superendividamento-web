@@ -228,15 +228,18 @@ export function App() {
 
   const handleImportJSON = (data: any) => {
     try {
-      if (data.process) setProcess(data.process);
-      if (data.income) setIncome(data.income);
-      if (data.expenses) setExpenses(data.expenses);
-      if (data.contracts) setContracts(data.contracts);
-      if (data.profile) setProfile(data.profile);
-      if (data.documents) setDocuments(data.documents);
-      alert('Backup importado com sucesso!');
+      if (data.process) setProcess({ ...data.process });
+      if (data.income) setIncome({ ...data.income });
+      if (data.expenses) setExpenses({ ...data.expenses });
+      if (data.contracts) setContracts(Array.isArray(data.contracts) ? [...data.contracts] : []);
+      if (data.profile) setProfile({ ...data.profile });
+      if (data.documents) setDocuments(Array.isArray(data.documents) ? [...data.documents] : []);
+      
+      const qtdCtr = Array.isArray(data.contracts) ? data.contracts.length : 0;
+      const devedorNome = data.process?.nomeDevedor || 'Devedor';
+      console.log(`✅ Dados importados com sucesso! Devedor: ${devedorNome}, Contratos: ${qtdCtr}`);
     } catch (err) {
-      alert('Erro ao importar arquivo JSON de backup. Formato inválido.');
+      alert('Erro ao importar arquivo de backup.');
     }
   };
 
