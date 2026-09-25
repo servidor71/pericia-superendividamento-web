@@ -11,6 +11,16 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- USE u800538042_pericia;
 
 -- -----------------------------------------------------------------------------
+-- 0. TABELA DE ARMAZENAMENTO AUXILIAR E BACKUP (DADOS DO SISTEMA)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS dados_sistema (
+    id VARCHAR(50) PRIMARY KEY,
+    tipo VARCHAR(50) NOT NULL,
+    conteudo LONGTEXT NOT NULL,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- -----------------------------------------------------------------------------
 -- 1. TABELA DE USUÁRIOS E ASSINATURAS (CONTA SAAS)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS usuarios (
