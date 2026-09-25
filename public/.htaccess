@@ -2,6 +2,9 @@
   RewriteEngine On
   RewriteBase /
 
+  # Ignora chamadas para a API Node.js
+  RewriteCond %{REQUEST_URI} !^/api/ [NC]
+
   # Se houver arquivo ou diretório físico, serve direto
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

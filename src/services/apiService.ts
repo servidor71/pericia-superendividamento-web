@@ -1,5 +1,7 @@
 // Servico de comunicacao com a API backend Express / Banco de Dados (MySQL / Storage)
 
+const BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
 export interface SavePayload {
   profile: any;
   process: any;
@@ -12,7 +14,7 @@ export interface SavePayload {
 
 export async function saveProcessToDatabase(data: SavePayload): Promise<{ success: boolean; storage?: string; error?: string }> {
   try {
-    const res = await fetch('/api/salvar', {
+    const res = await fetch(`${BASE_URL}/api/salvar`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +36,7 @@ export async function saveProcessToDatabase(data: SavePayload): Promise<{ succes
 
 export async function loadProcessFromDatabase(): Promise<SavePayload | null> {
   try {
-    const res = await fetch('/api/dados');
+    const res = await fetch(`${BASE_URL}/api/dados`);
     if (!res.ok) return null;
     const json = await res.json();
     if (json.success && json.data) {
@@ -69,7 +71,7 @@ export interface ProcessSummary {
 
 export async function fetchAllProcesses(): Promise<ProcessSummary[]> {
   try {
-    const res = await fetch('/api/processos');
+    const res = await fetch(`${BASE_URL}/api/processos`);
     if (!res.ok) return [];
     const json = await res.json();
     return json.success && Array.isArray(json.processos) ? json.processos : [];
@@ -81,7 +83,7 @@ export async function fetchAllProcesses(): Promise<ProcessSummary[]> {
 
 export async function fetchProcessById(id: string): Promise<SavePayload | null> {
   try {
-    const res = await fetch(`/api/processos/${encodeURIComponent(id)}`);
+    const res = await fetch(`${BASE_URL}/api/processos/${encodeURIComponent(id)}`);
     if (!res.ok) return null;
     const json = await res.json();
     return json.success && json.data ? json.data : null;
@@ -93,7 +95,7 @@ export async function fetchProcessById(id: string): Promise<SavePayload | null> 
 
 export async function deleteProcessById(id: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await fetch(`/api/processos/${encodeURIComponent(id)}`, {
+    const res = await fetch(`${BASE_URL}/api/processos/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
     if (!res.ok) {
@@ -108,7 +110,7 @@ export async function deleteProcessById(id: string): Promise<{ success: boolean;
 
 export async function checkDatabaseStatus(): Promise<{ isMySqlConnected: boolean; storageEngine: string } | null> {
   try {
-    const res = await fetch('/api/db-status');
+    const res = await fetch(`${BASE_URL}/api/db-status`);
     if (!res.ok) return null;
     return await res.json();
   } catch (err) {
