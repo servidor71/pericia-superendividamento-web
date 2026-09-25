@@ -12,7 +12,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors({ origin: '*' }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Inicializa a camada de banco de dados
 initDatabase();
