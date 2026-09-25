@@ -221,12 +221,20 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
         {/* CARD 1: QUADRO DE PARÂMETROS DO CONTRATO (ESTILO EXACTO DA IMAGEM) */}
         <div className="lg:col-span-1 bg-white p-4 rounded-lg border-2 border-slate-300 shadow-md font-sans text-xs text-slate-900 space-y-2">
           
-          {/* Header Bar da Imagem: ID | Ref | Data Ref */}
-          <div className="bg-slate-100 text-slate-950 px-3 py-1.5 rounded font-mono font-bold text-xs flex justify-between items-center border border-slate-300">
-            <span className="font-extrabold text-slate-800">{activeContract.id.toUpperCase()}</span>
-            <span className="text-red-600 font-extrabold">Contrato</span>
-            <span className="font-mono text-slate-900">{activeContract.numeroContrato}</span>
-            <span className="text-slate-700">02/07/2025</span>
+          {/* Header Bar do Contrato: Nº Contrato, Credor e Data do Contrato */}
+          <div className="bg-[#FAF8F3] text-slate-900 px-3 py-2 rounded-lg font-mono font-bold text-xs flex flex-wrap justify-between items-center border border-[#DCD8CD] gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-bold text-[10px] uppercase">Nº Contrato CCB:</span>
+              <span className="font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-[#DCD8CD]">{activeContract.numeroContrato || 'Sem número'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-bold text-[10px] uppercase">Credor:</span>
+              <span className="font-black text-[#1C4E5E]">{activeContract.credor || '—'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-bold text-[10px] uppercase">Data Contrato:</span>
+              <span className="font-bold text-slate-800">{formatDateDisplay(dataContrato)}</span>
+            </div>
           </div>
 
           {/* Form / Table Grid Estilo Ficha Spreadsheet */}
