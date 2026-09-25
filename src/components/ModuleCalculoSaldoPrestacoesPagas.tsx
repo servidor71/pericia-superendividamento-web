@@ -39,15 +39,15 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
     );
   };
 
-  // Parâmetros do Contrato da Imagem de Referência
-  const valorPrincipal = activeContract.valorLiberadoContrato || 16824.30;
-  const taxaJurosAm = activeContract.taxaJurosMes || 1.06;
-  const prazoMeses = activeContract.qtdParcelasTotal || 93;
-  const prestacaoAtual = activeContract.valorParcelaAtual || 287.82;
-  const parcelasPagas = activeContract.qtdParcelasPagas || 23;
-  const taxaBacenAm = activeContract.taxaMediaBacenMes || 1.26;
-  const dataContrato = activeContract.dataContrato || '2021-06-08';
-  const fatorCorrecao = activeContract.fatorCorrecao7Casas || 1.090998;
+  // Parâmetros do Contrato puxados ESTRITAMENTE do Módulo 5
+  const valorPrincipal = Number(activeContract.valorLiberadoContrato) || 0;
+  const taxaJurosAm = Number(activeContract.taxaJurosMes) || 0;
+  const prazoMeses = Number(activeContract.qtdParcelasTotal) || 0;
+  const prestacaoAtual = Number(activeContract.valorParcelaAtual) || 0;
+  const parcelasPagas = Number(activeContract.qtdParcelasPagas) || 0;
+  const taxaBacenAm = Number(activeContract.taxaMediaBacenMes) || 1.5;
+  const dataContrato = activeContract.dataContrato || '';
+  const fatorCorrecao = Number(activeContract.fatorCorrecao7Casas) || 1.0;
 
   // PMT pela Taxa Média BACEN
   const iBacen = taxaBacenAm / 100;
