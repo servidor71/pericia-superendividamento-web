@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2, Database, FolderOpen } from 'lucide-react';
+import { FilePlus, Sparkles, FileSpreadsheet, ShieldCheck, FileUp, CheckCircle2, Database, FolderOpen, Upload } from 'lucide-react';
 import type { ProcessData, SubscriptionConfig, SubscriptionPlanType } from '../types';
+import { parseExcelBackup } from '../services/excelImporter';
 
 interface HeaderProps {
   process: ProcessData;
@@ -49,20 +50,38 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      try {
+        const parsed = await parseExcelBackup(file);
+        onImportJSON(parsed);
+        if (onSaveToDatabase) {
+          await onSaveToDatabase();
+        }
+        alert('✅ Planilha Excel (.xlsx) restaurada com sucesso! Todos os processos, contratos e valores foram recarregados e salvos no banco.');
+      } catch (err: any) {
+        alert('Erro ao importar planilha Excel: ' + (err?.message || err));
+      }
+    } else {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const parsed = JSON.parse(event.target?.result as string);
           onImportJSON(parsed);
+          if (onSaveToDatabase) {
+            await onSaveToDatabase();
+          }
+          alert('✅ Backup JSON restaurado com sucesso!');
         } catch (err) {
-          alert('Erro ao carregar o arquivo JSON. Certifique-se de ser um arquivo válido de backup do sistema.');
+          alert('Erro ao carregar o arquivo. Certifique-se de selecionar um backup JSON ou planilha XLSX gerada pelo sistema.');
         }
       };
       reader.readAsText(file);
     }
+    e.target.value = '';
   };
 
   const handleOCRFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,9 +209,18 @@ export const Header: React.FC<HeaderProps> = ({
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".json"
+            accept=".json,.xlsx,.xls"
             className="hidden"
           />
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-[#1C4E5E] bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-all shadow-2xs cursor-pointer"
+            title="Restaurar dados diretamente da planilha Excel (.xlsx) baixada ou arquivo JSON"
+          >
+            <Upload className="w-3 h-3 text-amber-700" />
+            <span>Restaurar Excel/JSON</span>
+          </button>
           
           <button
             onClick={onExportExcel}
