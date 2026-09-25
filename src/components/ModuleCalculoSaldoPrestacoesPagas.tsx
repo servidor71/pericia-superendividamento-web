@@ -100,9 +100,17 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
     return dtContratoStr;
   }
 
-  // Tabela de Evolução da Amortização Mês a Mês
+  // Tabela de Evolução da Amortização Tabela Price Mês a Mês
   let currentSD = valorPrincipal;
   const iContrato = taxaJurosAm / 100;
+
+  // PMT Exato da Tabela Price
+  const pmtPriceCalculada = (iContrato > 0 && prazoMeses > 0)
+    ? (valorPrincipal * (iContrato * Math.pow(1 + iContrato, prazoMeses))) / (Math.pow(1 + iContrato, prazoMeses) - 1)
+    : (valorPrincipal / (prazoMeses || 1));
+
+  const pmtEfetiva = prestacaoAtual > 0 ? prestacaoAtual : pmtPriceCalculada;
+
   const scheduleRows = [];
 
   // Linha 0 (n = 0: Liberação do Crédito / Assinatura do Contrato)
@@ -117,16 +125,21 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
 
   for (let n = 1; n <= prazoMeses; n++) {
     const jurosMes = currentSD * iContrato;
-    const amortMes = prestacaoAtual - jurosMes;
-    const nextSD = Math.max(0, currentSD - amortMes);
+    let amortMes = pmtEfetiva - jurosMes;
 
+    // Na última parcela (ou se amortização superar o saldo restante), ajusta amortização para zerar o saldo exatamente em R$ 0,00
+    if (n === prazoMeses || currentSD - amortMes < 0.05) {
+      amortMes = currentSD;
+    }
+
+    const nextSD = Math.max(0, currentSD - amortMes);
     const currentDateStr = computeScheduleDate(n, dataContrato, activeContract.dataPrimeiraParcela);
     const isPaid = n <= parcelasPagas;
 
     scheduleRows.push({
       n,
       dataStr: currentDateStr,
-      sd: currentSD,
+      sd: nextSD, // Saldo Devedor Residual após o pagamento da parcela N
       juros: jurosMes,
       amort: amortMes,
       isPaid,
@@ -136,7 +149,9 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
   }
 
   // Saldo Devedor apurado exatamente na parcela N pagas
-  const saldoDevedorNaParcelaPaga = scheduleRows[parcelasPagas]?.sd || (valorPrincipal - (prestacaoAtual * parcelasPagas * 0.4));
+  const saldoDevedorNaParcelaPaga = parcelasPagas === 0 
+    ? valorPrincipal 
+    : (scheduleRows[parcelasPagas]?.sd ?? 0);
   const saldoDevedorAtualizado = saldoDevedorNaParcelaPaga * fatorCorrecao;
 
   // Sincronizar o Saldo Devedor Apurado no Estado Global do Contrato
