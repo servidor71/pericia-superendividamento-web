@@ -10,22 +10,36 @@ interface Module5Props {
   contracts: Contract[];
 }
 
-const COLORS = ['#1E3A8A', '#D97706', '#16A34A', '#DC2626', '#64748B', '#7C3AED', '#0891B2'];
+const PALETTE_COLORS = [
+  '#1C4E5E', // Deep Teal
+  '#D97706', // Amber
+  '#2563EB', // Blue
+  '#16A34A', // Emerald Green
+  '#DC2626', // Red
+  '#9333EA', // Purple
+  '#0891B2', // Cyan
+  '#EA580C', // Orange
+  '#4F46E5', // Indigo
+  '#059669', // Emerald
+];
 
 export const Module5ConsolidacaoPassivo: React.FC<Module5Props> = ({ income, expenses, contracts }) => {
   const [isEditing, setIsEditing] = useState(true);
   const summary = calculateFinancialSummary(income, expenses, contracts);
 
-  const chartDataBar = summary.contractsCalculated.map(c => ({
-    credor: c.credor.length > 12 ? `${c.credor.substring(0, 12)}...` : c.credor,
-    saldoINPC: c.saldoINPC,
-    parcelaAtual: c.valorParcelaAtual,
-  }));
+  // Consolidação / Agrupamento por Credor para eliminar poluição visual e sobreposição de 35 rótulos
+  const creditorGroupedMap = summary.contractsCalculated.reduce((acc: { [key: string]: number }, c) => {
+    const credorName = c.credor && c.credor.trim() !== '' ? c.credor.trim() : 'Outros Credores';
+    acc[credorName] = (acc[credorName] || 0) + (c.saldoINPC || 0);
+    return acc;
+  }, {});
 
-  const chartDataPie = summary.contractsCalculated.map(c => ({
-    name: c.credor,
-    value: c.saldoINPC,
-  }));
+  const groupedCreditors = Object.entries(creditorGroupedMap)
+    .map(([name, value]) => ({
+      name,
+      value: Math.round(value * 100) / 100,
+    }))
+    .sort((a, b) => b.value - a.value);
 
   const getAlertBadge = (perc: number) => {
     if (perc > 70) {
@@ -170,44 +184,112 @@ export const Module5ConsolidacaoPassivo: React.FC<Module5Props> = ({ income, exp
       </div>
 
       {/* Visual Charts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full font-sans">
         
-        {/* Bar Chart */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Distribuição dos Saldos Devedores por Credor (INPC)</h3>
+        {/* Bar Chart: Agrupado por Credor */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              Distribuição dos Saldos Devedores por Credor (INPC)
+            </h3>
+            <span className="text-[11px] font-mono font-black text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+              Total: {formatCurrency(summary.totalSaldoDevedorINPC)}
+            </span>
+          </div>
+
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartDataBar}>
-                <XAxis dataKey="credor" stroke="#64748B" fontSize={11} />
-                <YAxis stroke="#64748B" fontSize={11} />
-                <Tooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} />
-                <Bar dataKey="saldoINPC" fill="#1E3A8A" radius={[4, 4, 0, 0]} />
+              <BarChart data={groupedCreditors} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
+                <XAxis
+                  dataKey="name"
+                  stroke="#64748B"
+                  fontSize={10}
+                  tickFormatter={(val) => val.length > 14 ? `${val.substring(0, 14)}...` : val}
+                  interval={0}
+                  angle={-15}
+                  textAnchor="end"
+                />
+                <YAxis
+                  stroke="#64748B"
+                  fontSize={10}
+                  tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Saldo INPC']}
+                  contentStyle={{ backgroundColor: '#1C2B33', color: '#fff', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
+                />
+                <Bar dataKey="value" fill="#1C4E5E" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Pie Chart */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Proporção Percentual de Cada Credor no Passivo Total</h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartDataPie}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, percent }: any) => `${(name || '').substring(0, 10)}: ${((percent || 0) * 100).toFixed(1)}%`}
-                >
-                  {chartDataPie.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* Pie Chart: Agrupado por Credor com Legenda Limpa sem Sobreposição */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              Proporção Percentual de Cada Credor no Passivo Total
+            </h3>
+            <span className="text-[11px] font-bold text-[#1C4E5E] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+              {groupedCreditors.length} Credores Conciliados
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-center">
+            {/* Gráfico Donut */}
+            <div className="xl:col-span-3 h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={groupedCreditors}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={85}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ percent }: any) => ((percent || 0) * 100) >= 4 ? `${((percent || 0) * 100).toFixed(1)}%` : ''}
+                    labelLine={false}
+                  >
+                    {groupedCreditors.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={PALETTE_COLORS[index % PALETTE_COLORS.length]} stroke="#fff" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val: any, name: any) => [
+                      `${formatCurrency(Number(val))} (${((Number(val) / (summary.totalSaldoDevedorINPC || 1)) * 100).toFixed(1)}%)`,
+                      name
+                    ]}
+                    contentStyle={{ backgroundColor: '#1C2B33', color: '#fff', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
+                    itemStyle={{ color: '#FCD34D' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legenda de Credores Estruturada sem sobreposição de rótulos */}
+            <div className="xl:col-span-2 space-y-1.5 max-h-64 overflow-y-auto pr-1 text-xs divide-y divide-slate-100">
+              {groupedCreditors.map((item, idx) => {
+                const percent = summary.totalSaldoDevedorINPC > 0 ? (item.value / summary.totalSaldoDevedorINPC) * 100 : 0;
+                return (
+                  <div key={item.name} className="pt-1.5 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
+                        style={{ backgroundColor: PALETTE_COLORS[idx % PALETTE_COLORS.length] }}
+                      />
+                      <span className="font-bold text-slate-800 truncate" title={item.name}>
+                        {item.name}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0 font-mono">
+                      <span className="font-black text-slate-900 block text-[11px]">{formatCurrency(item.value)}</span>
+                      <span className="text-[10px] font-bold text-slate-500">{percent.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
