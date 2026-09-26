@@ -69,7 +69,7 @@ export const ModuleDemonstracaoTotalPagoContrato: React.FC<ModuleDemonstracaoTot
     const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
     const prestacoesRepactuadas = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
 
-    // 4. Total do Contrato (Original + Repactuado)
+    // 4. Total do Contrato (Pago + Repactuado)
     const totalContrato = prestacoesPagas + prestacoesRepactuadas;
 
     sumValorPrincipal += valorPrincipal;
@@ -190,18 +190,18 @@ export const ModuleDemonstracaoTotalPagoContrato: React.FC<ModuleDemonstracaoTot
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs min-w-[900px]">
-            {/* Cabeçalho da Tabela - Colunas Centralizadas e Redimensionadas */}
+          <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
+            {/* Cabeçalho da Tabela - Colunas Centralizadas e Redimensionadas sem Quebra de Texto */}
             <thead>
               <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] text-center border-b border-slate-300">
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[18%]">Credor</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[11%]">N.º Contrato</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[15%]">Tipo de Crédito</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[14%]">Valor Principal Contrato</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[14%]">Prestações Pagas (1)</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[14%]">Prestações Repactuadas (2)</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[14%]">Total do Contrato (Original + Repactuado)</th>
-                {isEditing && <th className="py-2.5 px-2 text-center align-middle w-[5%] no-print">Ações</th>}
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[140px]">Credor</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[110px]">N.º Contrato</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[130px]">Tipo de Crédito</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[160px]">Valor Principal Contrato</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[150px]">Prestações Pagas (1)</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[170px]">Prestações Repactuadas (2)</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle whitespace-nowrap min-w-[220px]">Total do Contrato (Pago + Repactuado)</th>
+                {isEditing && <th className="py-2.5 px-2 text-center align-middle whitespace-nowrap min-w-[60px] no-print">Ações</th>}
               </tr>
             </thead>
             
