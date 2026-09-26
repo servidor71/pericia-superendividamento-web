@@ -563,14 +563,14 @@ export function App() {
               )}
 
               {activeTab === 16 && (
-                <div className="space-y-6">
-                  <Module5ConsolidacaoPassivo income={income} expenses={expenses} contracts={contracts} />
-                  <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} />
-                </div>
+                <Module5ConsolidacaoPassivo income={income} expenses={expenses} contracts={contracts} />
               )}
 
               {activeTab === 17 && (
-                <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
+                <div className="space-y-6">
+                  <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} />
+                  <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
+                </div>
               )}
 
               {activeTab === 18 && (

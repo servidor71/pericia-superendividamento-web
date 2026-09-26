@@ -39,7 +39,7 @@ export const sidebarModules = [
   { id: 14, label: 'Módulo 14: Cálculo dos Juros Pagos & TIR do Credor', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TrendingUp },
   { id: 15, label: 'Módulo 15: Amortização Tabela Price (60 Parcelas)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
   { id: 16, label: 'Módulo 16: Consolidação do Passivo & Capacidade de Pagamento', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
-  { id: 17, label: 'Módulo 17: Plano de Pagamento Compulsório (Rateio Proporcional)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
+  { id: 17, label: 'Módulo 17: Engines de Repactuação & Plano Compulsório (Rateio Proporcional)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
   { id: 18, label: 'Módulo 18: Parecer Técnico, Emissão do Laudo Pericial & Exportações', group: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL', icon: Award },
 ];
 
