@@ -279,9 +279,9 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({
                   <tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-extrabold uppercase text-[10px]">
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">Credor</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">N.º Contrato</th>
-                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Saldo Devedor INPC (R$)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Saldo Devedor Atualizado (R$)</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">Peso Rateio (%)</th>
-                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Nova Parcela Repactuada PMT_i (R$)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Parcela Repactuada PMT (R$)</th>
                     <th className="py-2.5 px-3 text-center">Total Quitado em 60 Meses (R$)</th>
                   </tr>
                 </thead>
