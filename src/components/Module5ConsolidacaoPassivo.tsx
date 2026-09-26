@@ -248,7 +248,7 @@ export const Module5ConsolidacaoPassivo: React.FC<Module5Props> = ({ income, exp
                     outerRadius={85}
                     paddingAngle={3}
                     dataKey="value"
-                    label={({ percent }: any) => ((percent || 0) * 100) >= 4 ? `${((percent || 0) * 100).toFixed(1)}%` : ''}
+                    label={({ percent }: any) => ((percent || 0) * 100) >= 4 ? `${((percent || 0) * 100).toFixed(2).replace('.', ',')}%` : ''}
                     labelLine={false}
                   >
                     {groupedCreditors.map((_, index) => (
@@ -257,7 +257,7 @@ export const Module5ConsolidacaoPassivo: React.FC<Module5Props> = ({ income, exp
                   </Pie>
                   <Tooltip
                     formatter={(val: any, name: any) => [
-                      `${formatCurrency(Number(val))} (${((Number(val) / (summary.totalSaldoDevedorINPC || 1)) * 100).toFixed(1)}%)`,
+                      `${formatCurrency(Number(val))} (${((Number(val) / (summary.totalSaldoDevedorINPC || 1)) * 100).toFixed(2).replace('.', ',')}%)`,
                       name
                     ]}
                     contentStyle={{ backgroundColor: '#1C2B33', color: '#fff', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
@@ -284,7 +284,7 @@ export const Module5ConsolidacaoPassivo: React.FC<Module5Props> = ({ income, exp
                     </div>
                     <div className="text-right shrink-0 font-mono">
                       <span className="font-black text-slate-900 block text-[11px]">{formatCurrency(item.value)}</span>
-                      <span className="text-[10px] font-bold text-slate-500">{percent.toFixed(1)}%</span>
+                      <span className="text-[10px] font-bold text-slate-500">{percent.toFixed(2).replace('.', ',')}%</span>
                     </div>
                   </div>
                 );

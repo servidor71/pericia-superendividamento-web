@@ -472,7 +472,8 @@ export function formatDateBR(dateString: string): string {
 }
 
 export function formatPercent(value: number, decimals = 2): string {
-  return `${(value || 0).toFixed(decimals)}%`;
+  const val = typeof value === 'number' && !isNaN(value) ? value : 0;
+  return `${val.toFixed(decimals).replace('.', ',')}%`;
 }
 
 export function format7Decimals(value: number): string {

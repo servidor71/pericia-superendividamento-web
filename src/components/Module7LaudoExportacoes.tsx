@@ -416,8 +416,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
           ${summary.contractsCalculated.map(c => `
             <tr>
               <td>${c.credor}</td>
-              <td>${c.taxaJurosMes.toFixed(2)}%</td>
-              <td>${(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2)}%</td>
+              <td>${c.taxaJurosMes.toFixed(2).replace('.', ',')}%</td>
+              <td>${(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2).replace('.', ',')}%</td>
               <td class="text-right">${formatCurrency((c as any).totalEncargoContratual || c.valorParcelaAtual)}</td>
               <td class="text-right">${formatCurrency((c as any).totalEncargoBacen || c.valorParcelaAtual)}</td>
               <td class="text-right font-bold text-emerald-700">${formatCurrency((c as any).diferencaEncargoBacen || 0)}</td>
@@ -475,7 +475,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
             <tr>
               <td>${p.credor} (${p.numeroContrato})</td>
               <td class="text-right">${formatCurrency(p.saldoDevedorINPC)}</td>
-              <td class="text-center">${p.percentualDoTotal.toFixed(2)}%</td>
+              <td class="text-center">${p.percentualDoTotal.toFixed(2).replace('.', ',')}%</td>
               <td class="text-right font-bold">${formatCurrency(p.parcelaRepactuadaPMT)}</td>
               <td class="text-right">${formatCurrency(p.totalQuitado60m)}</td>
             </tr>
@@ -549,8 +549,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
               <td class="text-right">${formatCurrency(e.valorLiberado)}</td>
               <td class="text-right">${formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
               <td class="text-right font-bold text-emerald-700">${formatCurrency(e.totalPagoAcimaDoValorLiberado)}</td>
-              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2)}%</td>
-              <td class="text-center">${e.tirAaPercent.toFixed(2)}%</td>
+              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
+              <td class="text-center">${e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
             </tr>
           `).join('')}
         </tbody>
@@ -795,7 +795,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
             <tr>
               <td>${p.credor} (${p.numeroContrato})</td>
               <td class="text-right">${formatCurrency(p.saldoDevedorINPC)}</td>
-              <td class="text-center">${p.percentualDoTotal.toFixed(2)}%</td>
+              <td class="text-center">${p.percentualDoTotal.toFixed(2).replace('.', ',')}%</td>
               <td class="text-right font-bold">${formatCurrency(p.parcelaRepactuadaPMT)}</td>
               <td class="text-right">${formatCurrency(p.totalQuitado60m)}</td>
             </tr>
@@ -934,8 +934,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
           ${summary.contractsCalculated.map(c => `
             <tr>
               <td>${c.credor}</td>
-              <td>${c.taxaJurosMes.toFixed(2)}%</td>
-              <td>${(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2)}%</td>
+              <td>${c.taxaJurosMes.toFixed(2).replace('.', ',')}%</td>
+              <td>${(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2).replace('.', ',')}%</td>
               <td class="text-right">${formatCurrency((c as any).totalEncargoContratual || c.valorParcelaAtual)}</td>
               <td class="text-right">${formatCurrency((c as any).totalEncargoBacen || c.valorParcelaAtual)}</td>
               <td class="text-right font-bold text-emerald-700">${formatCurrency((c as any).diferencaEncargoBacen || 0)}</td>
@@ -963,8 +963,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
               <td class="text-right">${formatCurrency(e.valorLiberado)}</td>
               <td class="text-right">${formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
               <td class="text-right font-bold text-emerald-700">${formatCurrency(e.totalPagoAcimaDoValorLiberado)}</td>
-              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2)}%</td>
-              <td class="text-center">${e.tirAaPercent.toFixed(2)}%</td>
+              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
+              <td class="text-center">${e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
             </tr>
           `).join('')}
         </tbody>
@@ -985,7 +985,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
             <tr>
               <td>${c.credor} - ${c.numeroContrato}</td>
               <td>Atendido</td>
-              <td>CET: ${c.taxaJurosMes ? (c.taxaJurosMes * 1.15).toFixed(2) : '1.50'}% a.m. - Expresso na documentação</td>
+              <td>CET: ${c.taxaJurosMes ? (c.taxaJurosMes * 1.15).toFixed(2).replace('.', ',') : '1,50'}% a.m. - Expresso na documentação</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1191,7 +1191,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
               <td>${p.credor}</td>
               <td>${p.numeroContrato}</td>
               <td class="text-right">${formatCurrency(p.saldoDevedorINPC)}</td>
-              <td class="text-center">${p.percentualDoTotal.toFixed(2)}%</td>
+              <td class="text-center">${p.percentualDoTotal.toFixed(2).replace('.', ',')}%</td>
               <td class="text-right font-bold">${formatCurrency(p.parcelaRepactuadaPMT)}</td>
               <td class="text-right">${formatCurrency(p.totalQuitado60m)}</td>
             </tr>
@@ -1254,8 +1254,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
               <td>${e.credor} (${e.numeroContrato})</td>
               <td class="text-right">${formatCurrency(e.valorLiberado)}</td>
               <td class="text-right">${formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
-              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2)}%</td>
-              <td class="text-center">${e.tirAaPercent.toFixed(2)}%</td>
+              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
+              <td class="text-center">${e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1853,8 +1853,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                     {summary.contractsCalculated.map(c => (
                       <tr key={c.id}>
                         <td className="py-2 px-3 font-bold">{c.credor}</td>
-                        <td className="py-2 px-3 text-center font-mono">{c.taxaJurosMes.toFixed(2)}%</td>
-                        <td className="py-2 px-3 text-center font-mono">{(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2)}%</td>
+                        <td className="py-2 px-3 text-center font-mono">{c.taxaJurosMes.toFixed(2).replace('.', ',')}%</td>
+                        <td className="py-2 px-3 text-center font-mono">{(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2).replace('.', ',')}%</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency((c as any).totalEncargoContratual || c.valorParcelaAtual)}</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency((c as any).totalEncargoBacen || c.valorParcelaAtual)}</td>
                         <td className="py-2 px-3 text-right font-mono font-black text-emerald-700">{formatCurrency((c as any).diferencaEncargoBacen || 0)}</td>
@@ -1962,7 +1962,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                       <tr key={p.numeroContrato}>
                         <td className="py-2 px-3 font-bold">{p.credor} ({p.numeroContrato})</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency(p.saldoDevedorINPC)}</td>
-                        <td className="py-2 px-3 text-center font-mono">{p.percentualDoTotal.toFixed(2)}%</td>
+                        <td className="py-2 px-3 text-center font-mono">{p.percentualDoTotal.toFixed(2).replace('.', ',')}%</td>
                         <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(p.parcelaRepactuadaPMT)}</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency(p.totalQuitado60m)}</td>
                       </tr>
@@ -2072,8 +2072,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency(e.valorLiberado)}</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
                         <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(e.totalPagoAcimaDoValorLiberado)}</td>
-                        <td className="py-2 px-3 text-center font-mono font-bold">{e.tirAmPercent.toFixed(2)}%</td>
-                        <td className="py-2 px-3 text-center font-mono">{e.tirAaPercent.toFixed(2)}%</td>
+                        <td className="py-2 px-3 text-center font-mono font-bold">{e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
+                        <td className="py-2 px-3 text-center font-mono">{e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2552,7 +2552,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                           <tr key={p.numeroContrato}>
                             <td className="py-2 px-3 font-bold">{p.credor} ({p.numeroContrato})</td>
                             <td className="py-2 px-3 text-right font-mono">{formatCurrency(p.saldoDevedorINPC)}</td>
-                            <td className="py-2 px-3 text-center font-mono">{p.percentualDoTotal.toFixed(2)}%</td>
+                            <td className="py-2 px-3 text-center font-mono">{p.percentualDoTotal.toFixed(2).replace('.', ',')}%</td>
                             <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(p.parcelaRepactuadaPMT)}</td>
                             <td className="py-2 px-3 text-right font-mono">{formatCurrency(p.totalQuitado60m)}</td>
                           </tr>
@@ -2727,11 +2727,11 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                     {summary.contractsCalculated.map(c => (
                       <tr key={c.id}>
                         <td className="py-2 px-3 font-bold">{c.credor}</td>
-                        <td className="py-2 px-3 text-center font-mono">{c.taxaJurosMes.toFixed(2)}%</td>
-                        <td className="py-2 px-3 text-center font-mono">{(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2)}%</td>
+                        <td className="py-2 px-3 text-center font-mono">{c.taxaJurosMes.toFixed(2).replace('.', ',')}%</td>
+                        <td className="py-2 px-3 text-center font-mono">{(c.taxaMediaBacenMes || c.taxaJurosMes).toFixed(2).replace('.', ',')}%</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency((c as any).totalEncargoContratual || c.valorParcelaAtual)}</td>
                         <td className="py-2 px-3 text-right font-mono">{formatCurrency((c as any).totalEncargoBacen || c.valorParcelaAtual)}</td>
-                        <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">{formatCurrency((c as any).diferencaEncargoBacen || 0)}</td>
+                        <td className="py-2 px-3 text-right font-mono font-black text-emerald-700">{formatCurrency((c as any).diferencaEncargoBacen || 0)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2759,8 +2759,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                           <td className="py-2 px-3 text-right font-mono">{formatCurrency(e.valorLiberado)}</td>
                           <td className="py-2 px-3 text-right font-mono">{formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
                           <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(e.totalPagoAcimaDoValorLiberado)}</td>
-                          <td className="py-2 px-3 text-center font-mono font-bold">{e.tirAmPercent.toFixed(2)}%</td>
-                          <td className="py-2 px-3 text-center font-mono">{e.tirAaPercent.toFixed(2)}%</td>
+                          <td className="py-2 px-3 text-center font-mono font-bold">{e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
+                          <td className="py-2 px-3 text-center font-mono">{e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2799,7 +2799,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                       <tr key={c.id}>
                         <td className="py-2 px-3 font-bold">{c.credor} - {c.numeroContrato}</td>
                         <td className="py-2 px-3 text-emerald-700 font-bold">Atendido</td>
-                        <td className="py-2 px-3">CET: {c.taxaJurosMes ? (c.taxaJurosMes * 1.15).toFixed(2) : '1.50'}% a.m. - Expresso na documentação</td>
+                        <td className="py-2 px-3">CET: {c.taxaJurosMes ? (c.taxaJurosMes * 1.15).toFixed(2).replace('.', ',') : '1,50'}% a.m. - Expresso na documentação</td>
                       </tr>
                     ))}
                   </tbody>
@@ -3254,7 +3254,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                         <td className="font-sans font-bold">{p.credor}</td>
                         <td>{p.numeroContrato}</td>
                         <td className="text-right">{formatCurrency(p.saldoDevedorINPC)}</td>
-                        <td className="text-center">{p.percentualDoTotal.toFixed(2)}%</td>
+                        <td className="text-center">{p.percentualDoTotal.toFixed(2).replace('.', ',')}%</td>
                         <td className="text-right font-bold text-emerald-700">{formatCurrency(p.parcelaRepactuadaPMT)}</td>
                         <td className="text-right">{formatCurrency(p.totalQuitado60m)}</td>
                       </tr>
@@ -3325,8 +3325,8 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                             <td className="font-sans font-bold">{e.credor} ({e.numeroContrato})</td>
                             <td className="text-right">{formatCurrency(e.valorLiberado)}</td>
                             <td className="text-right">{formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
-                            <td className="text-center font-bold">{e.tirAmPercent.toFixed(2)}%</td>
-                            <td className="text-center">{e.tirAaPercent.toFixed(2)}%</td>
+                            <td className="text-center font-bold">{e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
+                            <td className="text-center">{e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
                           </tr>
                         ))}
                       </tbody>

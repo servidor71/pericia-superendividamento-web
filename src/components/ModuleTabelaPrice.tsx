@@ -243,7 +243,7 @@ export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({
             Cronograma Mês a Mês da Tabela Price ({schedule.length} Meses)
           </span>
           <span className="text-xs text-blue-700 font-mono font-bold">
-            PMT Fixa: {formatCurrency(pmt)} • Taxa: {taxaJurosAm}% a.m.
+            PMT Fixa: {formatCurrency(pmt)} • Taxa: {taxaJurosAm.toString().replace('.', ',')}% a.m.
           </span>
         </div>
 
@@ -253,7 +253,7 @@ export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({
               <tr>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">n (Mês)</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Saldo Devedor Inicial</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center">Juros Mês ({taxaJurosAm}%)</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center">Juros Mês ({taxaJurosAm.toString().replace('.', ',')}%)</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Amortização (R$)</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Prestação PMT (R$)</th>
                 <th className="py-2.5 px-3 text-center">Saldo Devedor Final</th>

@@ -390,7 +390,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                         className="w-20 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
                       />
                     ) : (
-                      `${item.indiceInpcMes.toFixed(2)}%`
+                      `${item.indiceInpcMes.toFixed(2).replace('.', ',')}%`
                     )}
                   </td>
 
@@ -420,7 +420,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                         className="w-20 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
                       />
                     ) : (
-                      `${item.indiceIpcaMes.toFixed(2)}%`
+                      `${item.indiceIpcaMes.toFixed(2).replace('.', ',')}%`
                     )}
                   </td>
 
