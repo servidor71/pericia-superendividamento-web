@@ -116,10 +116,10 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
       valorTarifasAbusivas: 0,
       expurgarAbusividades: false,
       tipoIndiceCorrecao: 'INPC',
-      fatorCorrecao7Casas: 1.0160724,
+      fatorCorrecao7Casas: 1.0,
       dataReferenciaUltimoPagamento: new Date().toISOString().split('T')[0],
-      saldoDevedorRefUltimaParcela: 9600.00,
-      taxaMediaBacenMes: 1.65,
+      saldoDevedorRefUltimaParcela: 0,
+      taxaMediaBacenMes: 0,
     };
     onContractsChange([...contracts, newContract]);
   };

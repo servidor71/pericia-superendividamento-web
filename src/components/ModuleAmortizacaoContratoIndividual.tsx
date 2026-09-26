@@ -36,14 +36,14 @@ export const ModuleAmortizacaoContratoIndividual: React.FC<ModuleAmortizacaoProp
   };
 
   // 1. Valores Básicos do Contrato
-  const valorPrincipal = activeContract.valorLiberadoContrato || 11297.75;
-  const taxaJurosAm = activeContract.taxaJurosMes || 1.05;
-  const prazoMeses = activeContract.qtdParcelasTotal || 96;
-  const prestacaoAtual = activeContract.valorParcelaAtual || 189.00;
-  const parcelasPagas = activeContract.qtdParcelasPagas || 22;
-  const taxaBacenAm = activeContract.taxaMediaBacenMes || 1.26;
-  const dataContrato = activeContract.dataContrato || '2021-06-18';
-  const fatorCorrecao = activeContract.fatorCorrecao7Casas || 1.0968016; // Fator INPC/IPCA
+  const valorPrincipal = activeContract.valorLiberadoContrato || 0;
+  const taxaJurosAm = activeContract.taxaJurosMes || 0;
+  const prazoMeses = activeContract.qtdParcelasTotal || 0;
+  const prestacaoAtual = activeContract.valorParcelaAtual || 0;
+  const parcelasPagas = activeContract.qtdParcelasPagas || 0;
+  const taxaBacenAm = activeContract.taxaMediaBacenMes || 0;
+  const dataContrato = activeContract.dataContrato || '';
+  const fatorCorrecao = activeContract.fatorCorrecao7Casas || 1.0; // Fator INPC/IPCA
 
   // 2. PMT pela Taxa Média BACEN
   // PMT_bacen = VP * [ i*(1+i)^n ] / [ (1+i)^n - 1 ]
