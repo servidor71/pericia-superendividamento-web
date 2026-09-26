@@ -35,16 +35,15 @@ export const ModuleSaldoAtualValorPago: React.FC<ModuleSaldoAtualValorPagoProps>
   };
 
   // Totais acumulados para o rodapé
-  let sumValorPrincipal = 0;
+  let sumSaldoDevedorBase = 0;
   let sumSaldoAtualizadoInpc = 0;
   let sumValorJaPago = 0;
 
   const rows = contracts.map((c) => {
-    // 1. Valor Principal do Contrato
-    const valorPrincipal = c.valorLiberadoContrato || 0;
+    // 1. Saldo Devedor Base vindo da apuração do Módulo 6
+    const saldoBase = getSaldoDevedorModulo6(c);
 
     // 2. Saldo Devedor Atualizado pelo INPC/IPCA selecionado (7 Casas)
-    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     const saldoAjustado = Math.max(0, saldoBase - deducao);
     const fator = c.fatorCorrecao7Casas || (selectedIndiceGlobal === 'INPC' ? 1.0968016 : 1.0842105);
@@ -53,13 +52,13 @@ export const ModuleSaldoAtualValorPago: React.FC<ModuleSaldoAtualValorPagoProps>
     // 3. Valor Já Pago (Total das Prestações Pagas)
     const valorJaPago = c.valorParcelaAtual * c.qtdParcelasPagas;
 
-    sumValorPrincipal += valorPrincipal;
+    sumSaldoDevedorBase += saldoBase;
     sumSaldoAtualizadoInpc += saldoDevedorAtualizadoInpc;
     sumValorJaPago += valorJaPago;
 
     return {
       ...c,
-      valorPrincipal,
+      saldoBase,
       saldoDevedorAtualizadoInpc,
       valorJaPago,
     };
@@ -195,7 +194,7 @@ export const ModuleSaldoAtualValorPago: React.FC<ModuleSaldoAtualValorPagoProps>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center w-[15%]">Credor</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center w-[13%]">N. Contrato</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center w-[15%]">Tipo de Crédito</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center w-[14%]">Valor Principal Contrato</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center w-[14%]">Saldo Devedor</th>
                 
                 {/* Coluna Separada: ÍNDICE DE ATUALIZAÇÃO MONETÁRIA */}
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center w-[13%]">
@@ -271,16 +270,16 @@ export const ModuleSaldoAtualValorPago: React.FC<ModuleSaldoAtualValorPagoProps>
                     )}
                   </td>
 
-                  {/* Valor Principal Contrato */}
+                  {/* Saldo Devedor (extraído do Módulo 6) */}
                   <td className="py-2.5 px-3 text-right font-mono font-normal text-slate-900 border-r border-slate-200">
                     {isEditing ? (
                       <CurrencyInput
-                        value={row.valorPrincipal}
-                        onChange={(val) => handleUpdateContractField(row.id, 'valorLiberadoContrato', val)}
+                        value={row.saldoBase}
+                        onChange={(val) => handleUpdateContractField(row.id, 'saldoDevedorRefUltimaParcela', val)}
                         className="w-full max-w-[120px] text-right px-2 py-0.5 border border-slate-300 rounded font-normal text-slate-900 text-xs bg-white inline-block"
                       />
                     ) : (
-                      formatCurrency(row.valorPrincipal)
+                      formatCurrency(row.saldoBase)
                     )}
                   </td>
 
@@ -351,7 +350,7 @@ export const ModuleSaldoAtualValorPago: React.FC<ModuleSaldoAtualValorPagoProps>
                   Total do Encargo Mensal ==&gt;&gt;
                 </td>
                 <td className="py-3 px-4 text-right font-mono font-black text-slate-900 text-sm border-r border-slate-200">
-                  {formatCurrency(sumValorPrincipal)}
+                  {formatCurrency(sumSaldoDevedorBase)}
                 </td>
                 <td className="py-3 px-3 text-center font-mono font-black text-blue-900 text-xs border-r border-slate-200">
                   {selectedIndiceGlobal} (Fator Acumulado)
