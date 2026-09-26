@@ -567,7 +567,7 @@ export function App() {
               )}
 
               {activeTab === 17 && (
-                <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} />
+                <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} taxaJurosAm={taxaJurosPlano} />
               )}
 
               {activeTab === 18 && (

@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { Calculator, Sliders, Scale } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
-import { calculateFinancialSummary, calculateProportional60xPlan, formatCurrency, formatPercent } from '../services/calculations';
+import { 
+  calculateFinancialSummary, 
+  formatCurrency, 
+  formatPercent,
+  generatePriceSchedule,
+  getSaldoDevedorModulo6
+} from '../services/calculations';
 
 interface Module6Props {
   income: IncomeData;
   expenses: ExpenseData;
   contracts: Contract[];
+  taxaJurosAm?: number;
 }
 
-export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ income, expenses, contracts }) => {
+export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ 
+  income, 
+  expenses, 
+  contracts,
+  taxaJurosAm = 1.63,
+}) => {
   const [activeSubTab, setActiveSubTab] = useState<'compulsorio' | 'voluntario'>('compulsorio');
   const [isEditing, setIsEditing] = useState(true);
   
@@ -17,9 +29,66 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ income, expen
   const [carenciaDias, setCarenciaDias] = useState<number>(180);
   const [descontoAcordoPercent, setDescontoAcordoPercent] = useState<number>(15);
   const [prazoVoluntarioMeses, setPrazoVoluntarioMeses] = useState<number>(60);
+  const prazoMeses = 60;
 
   const summary = calculateFinancialSummary(income, expenses, contracts);
-  const plan60x = calculateProportional60xPlan(contracts, summary.capacidadeMensalPlano);
+
+  // 1. Cálculo do Saldo Devedor TOTAL ORIGINAL (idêntico ao Módulo 18)
+  const totalSaldoDevedorOriginal = contracts.reduce((acc, c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    return acc + Math.max(0, saldoBase - deducao);
+  }, 0);
+
+  // 2. Cálculo do Saldo Devedor TOTAL ATUALIZADO (idêntico ao Módulo 18)
+  const rawTotalAtualizado = contracts.reduce((acc, c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    const saldoAjustado = Math.max(0, saldoBase - deducao);
+    const fator = c.fatorCorrecao7Casas || 1.0;
+    return acc + (saldoAjustado * fator);
+  }, 0);
+  const totalSaldoDevedorAtualizado = Math.round(rawTotalAtualizado * 100) / 100;
+
+  // 3. PMT Global do Plano via Tabela Price (com taxa e prazo do Módulo 18)
+  const { pmt: pmtGlobalTotal } = generatePriceSchedule(totalSaldoDevedorAtualizado, taxaJurosAm, prazoMeses);
+
+  // 4. Linhas da tabela com valores 100% idênticos ao Módulo 18
+  let sumPmtMensalIndividual = 0;
+  let sumTotalQuitado60m = 0;
+
+  const plan60xRows = contracts.map((c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    const saldoDevedorOriginal = Math.max(0, saldoBase - deducao);
+    
+    const fator = c.fatorCorrecao7Casas || 1.0;
+    const saldoDevedorAtualizado = saldoDevedorOriginal * fator;
+
+    // Percentual de rateio calculado COM BASE NO TOTAL DO SALDO DEVEDOR ORIGINAL
+    const percentualRateio = totalSaldoDevedorOriginal > 0 
+      ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
+      : 0;
+
+    // PMT Mensal individual proporcional (arredondada para 2 casas decimais, idêntica ao Módulo 18)
+    const rawPmtIndividual = pmtGlobalTotal * (percentualRateio / 100);
+    const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
+
+    // Total quitado em 60 meses = PMT Mensal (2 casas decimais) * prazoMeses
+    const totalQuitado60m = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
+
+    sumPmtMensalIndividual += pmtMensalIndividual;
+    sumTotalQuitado60m += totalQuitado60m;
+
+    return {
+      credor: c.credor,
+      numeroContrato: c.numeroContrato,
+      saldoDevedorINPC: saldoDevedorAtualizado,
+      percentualDoTotal: percentualRateio,
+      parcelaRepactuadaPMT: pmtMensalIndividual,
+      totalQuitado60m: totalQuitado60m,
+    };
+  });
 
   return (
     <div className="space-y-6 pb-24 w-full">
@@ -157,7 +226,7 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ income, expen
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="p-4 bg-blue-50/80 border-b border-blue-200 text-slate-900 flex justify-between items-center">
               <span className="text-xs font-black uppercase tracking-wider text-blue-900">Memória de Cálculo do Rateio Proporcional (60 Parcelas Mensais)</span>
-              <span className="text-xs font-mono font-bold text-emerald-800">Total 60m: {formatCurrency(summary.capacidadeMensalPlano * 60)}</span>
+              <span className="text-xs font-mono font-bold text-emerald-800">Total 60m: {formatCurrency(sumTotalQuitado60m)}</span>
             </div>
 
             <div className="overflow-x-auto">
@@ -173,7 +242,7 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ income, expen
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 font-normal">
-                  {plan60x.map((p, idx) => (
+                  {plan60xRows.map((p, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 font-normal text-slate-800">
                       <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{p.credor}</td>
                       <td className="py-2.5 px-3 border-r border-slate-200 text-center font-mono text-slate-700 font-normal">{p.numeroContrato}</td>
@@ -187,11 +256,11 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ income, expen
                 <tfoot>
                   <tr className="bg-slate-100 text-slate-900 font-extrabold text-xs uppercase border-t-2 border-slate-300">
                     <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">TOTAL COMPULSÓRIO (60 MESES)</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{plan60x.length} Contratos</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-blue-900 font-black">{formatCurrency(summary.totalSaldoDevedorINPC)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{plan60xRows.length} Contratos</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-blue-900 font-black">{formatCurrency(totalSaldoDevedorAtualizado)}</td>
                     <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">100.00%</td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-emerald-800 font-black">{formatCurrency(summary.capacidadeMensalPlano)}</td>
-                    <td className="py-2.5 px-3 text-center text-blue-900 font-black">{formatCurrency(summary.capacidadeMensalPlano * 60)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-emerald-800 font-black">{formatCurrency(sumPmtMensalIndividual)}</td>
+                    <td className="py-2.5 px-3 text-center text-blue-900 font-black">{formatCurrency(sumTotalQuitado60m)}</td>
                   </tr>
                 </tfoot>
               </table>
