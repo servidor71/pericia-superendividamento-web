@@ -396,7 +396,7 @@ export const Module3CredoresContratos: React.FC<Module3Props> = ({ contracts, on
                         <input
                           type="number"
                           step="0.01"
-                          value={c.taxaJurosMes}
+                          value={c.taxaJurosMes !== undefined && c.taxaJurosMes !== null ? Number(c.taxaJurosMes).toFixed(2) : '0.00'}
                           onChange={(e) => handleUpdateContract(c.id, 'taxaJurosMes', parseFloat(e.target.value) || 0)}
                           className="w-16 px-1.5 py-1 border border-slate-300 rounded text-xs text-center font-normal"
                         />

@@ -307,7 +307,7 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
                   <input
                     type="number"
                     step="0.01"
-                    value={taxaJurosAm}
+                    value={taxaJurosAm !== undefined && taxaJurosAm !== null ? Number(taxaJurosAm).toFixed(2) : '0.00'}
                     onChange={(e) => handleUpdateActiveField('taxaJurosMes', parseFloat(e.target.value) || 0)}
                     className="w-20 text-right px-2 py-0.5 border border-slate-300 rounded font-normal text-slate-900 bg-white text-xs"
                   />

@@ -389,7 +389,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                             type="number"
                             step="0.01"
                             disabled={!isEditing}
-                            value={c.taxaJurosMes}
+                            value={c.taxaJurosMes !== undefined && c.taxaJurosMes !== null ? Number(c.taxaJurosMes).toFixed(2) : '0.00'}
                             onChange={(e) => handleUpdate(c.id, 'taxaJurosMes', parseFloat(e.target.value) || 0)}
                             className="w-16 text-right px-1.5 py-0.5 border border-slate-300 rounded font-normal text-slate-800 text-[11px] bg-white disabled:bg-slate-100"
                           />
@@ -400,7 +400,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                             type="number"
                             step="0.01"
                             disabled={!isEditing}
-                            value={c.taxaMediaBacenMes}
+                            value={c.taxaMediaBacenMes !== undefined && c.taxaMediaBacenMes !== null ? Number(c.taxaMediaBacenMes).toFixed(2) : '0.00'}
                             onChange={(e) => handleUpdate(c.id, 'taxaMediaBacenMes', parseFloat(e.target.value) || 0)}
                             className="w-16 text-right px-1.5 py-0.5 border border-slate-300 rounded font-normal text-slate-800 text-[11px] bg-white disabled:bg-slate-100"
                           />
