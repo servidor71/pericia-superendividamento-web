@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TableProperties, Sparkles, Trash2 } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
-import { generatePriceSchedule, formatCurrency, getSaldoDevedorModulo6 } from '../services/calculations';
+import { calculateModulo18PricePlan, formatCurrency } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 
 interface ModulePlanoCompulsorioProps {
@@ -38,60 +38,13 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
     }
   };
 
-  // 1. Cálculo do Saldo Devedor TOTAL ORIGINAL (antes da atualização monetária)
-  const totalSaldoDevedorOriginal = contracts.reduce((acc, c) => {
-    const saldoBase = getSaldoDevedorModulo6(c);
-    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
-    return acc + Math.max(0, saldoBase - deducao);
-  }, 0);
-
-  // 2. Cálculo do Saldo Devedor TOTAL ATUALIZADO (após correção monetária INPC/IPCA)
-  const rawTotalAtualizado = contracts.reduce((acc, c) => {
-    const saldoBase = getSaldoDevedorModulo6(c);
-    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
-    const saldoAjustado = Math.max(0, saldoBase - deducao);
-    const fator = c.fatorCorrecao7Casas || 1.0;
-    return acc + (saldoAjustado * fator);
-  }, 0);
-  const totalSaldoDevedorAtualizado = Math.round(rawTotalAtualizado * 100) / 100;
-
-  // PMT Global do Plano via Tabela Price (com taxa e prazo)
-  const { pmt: pmtGlobalTotal } = generatePriceSchedule(totalSaldoDevedorAtualizado, taxaJurosAm, prazoMeses);
-
-  // Linhas com Rateio Proporcional Estrito com base no Saldo Devedor ORIGINAL (Art. 104-B §4º CDC)
-  let sumTotalPago = 0;
-
-  const rows = contracts.map((c) => {
-    const saldoBase = getSaldoDevedorModulo6(c);
-    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
-    const saldoDevedorOriginal = Math.max(0, saldoBase - deducao);
-    
-    const fator = c.fatorCorrecao7Casas || 1.0;
-    const saldoDevedorAtualizado = saldoDevedorOriginal * fator;
-
-    // Percentual de rateio calculado COM BASE NO TOTAL DO SALDO DEVEDOR ORIGINAL (antes da atualização)
-    const percentualRateio = totalSaldoDevedorOriginal > 0 
-      ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
-      : 0;
-
-    // PMT Mensal individual proporcional (arredondada para 2 casas decimais)
-    const rawPmtIndividual = pmtGlobalTotal * (percentualRateio / 100);
-    const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
-
-    // Total pago no plano = PMT Mensal (2 casas decimais) * prazo em meses do plano
-    const totalPagoNoPlano = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
-
-    sumTotalPago += totalPagoNoPlano;
-
-    return {
-      ...c,
-      saldoDevedorOriginal,
-      saldoDevedorAtualizado,
-      percentualRateio,
-      pmtMensalIndividual,
-      totalPagoNoPlano,
-    };
-  });
+  const {
+    totalSaldoDevedorOriginal,
+    totalSaldoDevedorAtualizado,
+    pmtGlobalTotal,
+    sumTotalPago,
+    rows,
+  } = calculateModulo18PricePlan(contracts, taxaJurosAm, prazoMeses);
 
   // Handlers Reativos para Atualização Bidirecional em Tempo Real
   const handleUpdateContractField = (id: string, field: keyof Contract, val: any) => {

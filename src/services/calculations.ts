@@ -239,6 +239,74 @@ export function calculateProportional60xPlan(contracts: Contract[], capacidadeMe
 }
 
 /**
+ * Apura o Plano de Pagamento Compulsório (60 Parcelas - Rateio Proporcional Price - Módulo 18)
+ * Art. 104-B, § 4º do CDC
+ */
+export function calculateModulo18PricePlan(
+  contracts: Contract[],
+  taxaJurosAm: number = 1.63,
+  prazoMeses: number = 60
+) {
+  const totalSaldoDevedorOriginal = contracts.reduce((acc, c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    return acc + Math.max(0, saldoBase - deducao);
+  }, 0);
+
+  const rawTotalAtualizado = contracts.reduce((acc, c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    const saldoAjustado = Math.max(0, saldoBase - deducao);
+    const fator = c.fatorCorrecao7Casas || 1.0;
+    return acc + (saldoAjustado * fator);
+  }, 0);
+  const totalSaldoDevedorAtualizado = Math.round(rawTotalAtualizado * 100) / 100;
+
+  const { pmt: pmtGlobalTotal } = generatePriceSchedule(totalSaldoDevedorAtualizado, taxaJurosAm, prazoMeses);
+
+  let sumTotalPago = 0;
+  let sumPmt = 0;
+
+  const rows = contracts.map((c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    const saldoDevedorOriginal = Math.max(0, saldoBase - deducao);
+    
+    const fator = c.fatorCorrecao7Casas || 1.0;
+    const saldoDevedorAtualizado = saldoDevedorOriginal * fator;
+
+    const percentualRateio = totalSaldoDevedorOriginal > 0 
+      ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
+      : 0;
+
+    const rawPmtIndividual = pmtGlobalTotal * (percentualRateio / 100);
+    const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
+    const totalPagoNoPlano = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
+
+    sumTotalPago += totalPagoNoPlano;
+    sumPmt += pmtMensalIndividual;
+
+    return {
+      ...c,
+      saldoDevedorOriginal,
+      saldoDevedorAtualizado,
+      percentualRateio,
+      pmtMensalIndividual,
+      totalPagoNoPlano,
+    };
+  });
+
+  return {
+    totalSaldoDevedorOriginal,
+    totalSaldoDevedorAtualizado,
+    pmtGlobalTotal,
+    sumPmt,
+    sumTotalPago,
+    rows,
+  };
+}
+
+/**
  * Calculador de PMT no Sistema Francês de Amortização (Tabela Price)
  */
 export function calculatePricePMT(principal: number, taxaAmPercent: number, prazoMeses: number): number {

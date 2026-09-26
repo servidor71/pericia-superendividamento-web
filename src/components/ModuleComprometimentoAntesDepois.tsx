@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
-import { calculateFinancialSummary, calculateProportional60xPlan, formatCurrency, formatPercent } from '../services/calculations';
+import { calculateFinancialSummary, calculateModulo18PricePlan, formatCurrency, formatPercent } from '../services/calculations';
 
 interface ModuleComprometimentoProps {
   income: IncomeData;
   expenses: ExpenseData;
   contracts: Contract[];
+  taxaJurosAm?: number;
 }
 
-export const ModuleComprometimentoAntesDepois: React.FC<ModuleComprometimentoProps> = ({ income, expenses, contracts }) => {
+export const ModuleComprometimentoAntesDepois: React.FC<ModuleComprometimentoProps> = ({
+  income,
+  expenses,
+  contracts,
+  taxaJurosAm = 1.63,
+}) => {
   const [isEditing, setIsEditing] = useState(true);
 
   const summary = calculateFinancialSummary(income, expenses, contracts);
-  const plan60x = calculateProportional60xPlan(contracts, summary.capacidadeMensalPlano);
+  const modulo18Plan = calculateModulo18PricePlan(contracts, taxaJurosAm, 60);
 
   const rla = summary.rla;
   const totalEncargoAntes = summary.totalParcelasAtuais;
   const percentualAntes = rla > 0 ? (totalEncargoAntes / rla) * 100 : 0;
 
-  const totalEncargoApos = summary.capacidadeMensalPlano;
+  const totalEncargoApos = modulo18Plan.sumPmt;
   const percentualApos = rla > 0 ? (totalEncargoApos / rla) * 100 : 0;
   const percentualRendaPreservada = Math.max(0, 100 - percentualApos);
 
@@ -138,13 +144,13 @@ export const ModuleComprometimentoAntesDepois: React.FC<ModuleComprometimentoPro
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 font-normal">
-                  {contracts.map((c, idx) => {
-                    const pmtRepactuado = plan60x[idx]?.parcelaRepactuadaPMT || 0;
+                  {modulo18Plan.rows.map((row, idx) => {
+                    const pmtRepactuado = row.pmtMensalIndividual;
                     return (
-                      <tr key={c.id || idx} className="hover:bg-slate-50 font-normal text-slate-800">
-                        <td className="py-2.5 px-3 text-center border-r border-slate-200 font-normal">{c.credor}</td>
-                        <td className="py-2.5 px-3 text-center border-r border-slate-200 font-mono text-slate-700 font-normal">{c.numeroContrato}</td>
-                        <td className="py-2.5 px-3 text-center border-r border-slate-200 text-slate-700 font-normal">{c.modalidade}</td>
+                      <tr key={row.id || idx} className="hover:bg-slate-50 font-normal text-slate-800">
+                        <td className="py-2.5 px-3 text-center border-r border-slate-200 font-normal">{row.credor}</td>
+                        <td className="py-2.5 px-3 text-center border-r border-slate-200 font-mono text-slate-700 font-normal">{row.numeroContrato}</td>
+                        <td className="py-2.5 px-3 text-center border-r border-slate-200 text-slate-700 font-normal">{row.modalidade}</td>
                         <td className="py-2.5 px-3 text-center font-normal text-emerald-900">{formatCurrency(pmtRepactuado)}</td>
                       </tr>
                     );
