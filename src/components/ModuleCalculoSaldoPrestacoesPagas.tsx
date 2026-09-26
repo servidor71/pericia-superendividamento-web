@@ -45,7 +45,7 @@ export const ModuleCalculoSaldoPrestacoesPagas: React.FC<ModuleCalculoSaldoPrest
   const prazoMeses = Number(activeContract.qtdParcelasTotal) || 0;
   const prestacaoAtual = Number(activeContract.valorParcelaAtual) || 0;
   const parcelasPagas = Number(activeContract.qtdParcelasPagas) || 0;
-  const taxaBacenAm = Number(activeContract.taxaMediaBacenMes) || 1.5;
+  const taxaBacenAm = Number(activeContract.taxaMediaBacenMes) || 0;
   const dataContrato = activeContract.dataContrato || '';
   const fatorCorrecao = Number(activeContract.fatorCorrecao7Casas) || 1.0;
 

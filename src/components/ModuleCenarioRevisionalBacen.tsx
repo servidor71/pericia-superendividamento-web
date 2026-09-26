@@ -20,9 +20,9 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
 
   // Helper para calcular a PMT pela Taxa Média BACEN de cada contrato
   const calculatePmtBacen = (c: Contract) => {
-    const vp = c.valorLiberadoContrato || 5000;
-    const n = c.qtdParcelasTotal || 60;
-    const iBacen = (c.taxaMediaBacenMes || 1.26) / 100;
+    const vp = c.valorLiberadoContrato || 0;
+    const n = c.qtdParcelasTotal || 0;
+    const iBacen = (c.taxaMediaBacenMes || 0) / 100;
 
     if (iBacen <= 0 || n <= 0) return vp / (n || 1);
     return (vp * (iBacen * Math.pow(1 + iBacen, n))) / (Math.pow(1 + iBacen, n) - 1);
