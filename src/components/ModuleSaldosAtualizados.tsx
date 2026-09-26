@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp } from 'lucide-react';
 import type { Contract } from '../types';
 import { initialContracts } from '../mockData';
-import { formatCurrency } from '../services/calculations';
+import { formatCurrency, getSaldoDevedorModulo6 } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 
 interface ModuleSaldosProps {
@@ -30,9 +30,7 @@ export const ModuleSaldosAtualizados: React.FC<ModuleSaldosProps> = ({ contracts
   let totalSaldoAtualizado = 0;
 
   const rows = contracts.map(c => {
-    let saldoRefBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    let saldoRefBase = getSaldoDevedorModulo6(c);
 
     let fator7Casas = c.fatorCorrecao7Casas || 1.0;
     let saldoAtualizado = saldoRefBase * fator7Casas;

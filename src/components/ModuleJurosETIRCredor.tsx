@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Percent, Trash2 } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
-import { generatePriceSchedule, formatCurrency, calculateExcelTaxaTIR } from '../services/calculations';
+import { generatePriceSchedule, formatCurrency, calculateExcelTaxaTIR, getSaldoDevedorModulo6 } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 
 interface ModuleJurosETIRCredorProps {
@@ -25,18 +25,14 @@ export const ModuleJurosETIRCredor: React.FC<ModuleJurosETIRCredorProps> = ({
 
   // 1. Cálculo do Saldo Devedor Total Original acumulado reativo
   const totalSaldoDevedorOriginal = contracts.reduce((acc, c) => {
-    const saldoBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     return acc + Math.max(0, saldoBase - deducao);
   }, 0);
 
   // 2. Cálculo do Saldo Devedor Total Atualizado acumulado reativo
   const totalSaldoDevedorAtualizado = contracts.reduce((acc, c) => {
-    const saldoBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     const saldoAjustado = Math.max(0, saldoBase - deducao);
     const fator = c.fatorCorrecao7Casas || 1.0;
@@ -59,9 +55,7 @@ export const ModuleJurosETIRCredor: React.FC<ModuleJurosETIRCredorProps> = ({
     const prestacoesPagas = c.valorParcelaAtual * c.qtdParcelasPagas;
 
     // 3. Prestações Repactuadas (Plano 60x Rateio Price)
-    const saldoBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     const saldoDevedorOriginal = Math.max(0, saldoBase - deducao);
 

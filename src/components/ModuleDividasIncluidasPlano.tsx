@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ListChecks } from 'lucide-react';
 import type { Contract } from '../types';
-import { formatCurrency } from '../services/calculations';
+import { formatCurrency, getSaldoDevedorModulo6 } from '../services/calculations';
 
 interface ModuleDividasProps {
   contracts: Contract[];
@@ -13,9 +13,7 @@ export const ModuleDividasIncluidasPlano: React.FC<ModuleDividasProps> = ({ cont
   let totalSaldoRef = 0;
 
   const rows = contracts.map(c => {
-    let saldoRefBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    let saldoRefBase = getSaldoDevedorModulo6(c);
 
     totalSaldoRef += saldoRefBase;
 

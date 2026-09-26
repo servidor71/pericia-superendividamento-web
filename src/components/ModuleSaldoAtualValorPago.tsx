@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DollarSign, Trash2 } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
-import { formatCurrency } from '../services/calculations';
+import { formatCurrency, getSaldoDevedorModulo6 } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 
 interface ModuleSaldoAtualValorPagoProps {
@@ -44,9 +44,7 @@ export const ModuleSaldoAtualValorPago: React.FC<ModuleSaldoAtualValorPagoProps>
     const valorPrincipal = c.valorLiberadoContrato || 0;
 
     // 2. Saldo Devedor Atualizado pelo INPC/IPCA selecionado (7 Casas)
-    const saldoBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     const saldoAjustado = Math.max(0, saldoBase - deducao);
     const fator = c.fatorCorrecao7Casas || (selectedIndiceGlobal === 'INPC' ? 1.0968016 : 1.0842105);

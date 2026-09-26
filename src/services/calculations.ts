@@ -50,6 +50,49 @@ export function calculateTotalExpenses(expenses: ExpenseData): number {
   return padrao + outrasDespesasTotal;
 }
 
+/**
+ * Apura o Saldo Devedor do Módulo 6 (Saldo Devedor por Prestações Pagas no Sistema Price)
+ */
+export function getSaldoDevedorModulo6(c: Contract): number {
+  if (c.saldoDevedorRefUltimaParcela !== undefined && c.saldoDevedorRefUltimaParcela > 0) {
+    return c.saldoDevedorRefUltimaParcela;
+  }
+
+  const valorPrincipal = Number(c.valorLiberadoContrato) || 0;
+  const taxaJurosAm = Number(c.taxaJurosMes) || 0;
+  const prazoMeses = Number(c.qtdParcelasTotal) || 0;
+  const prestacaoAtual = Number(c.valorParcelaAtual) || 0;
+  const parcelasPagas = Number(c.qtdParcelasPagas) || 0;
+
+  if (valorPrincipal <= 0 || prazoMeses <= 0) return 0;
+  if (parcelasPagas === 0) return valorPrincipal;
+
+  const iContrato = taxaJurosAm / 100;
+  const pmtPriceCalculada = iContrato > 0
+    ? (valorPrincipal * (iContrato * Math.pow(1 + iContrato, prazoMeses))) / (Math.pow(1 + iContrato, prazoMeses) - 1)
+    : (valorPrincipal / prazoMeses);
+
+  const pmtEfetiva = prestacaoAtual > 0 ? prestacaoAtual : pmtPriceCalculada;
+
+  let currentSD = valorPrincipal;
+  for (let n = 1; n <= prazoMeses; n++) {
+    const jurosMes = currentSD * iContrato;
+    let amortMes = pmtEfetiva - jurosMes;
+
+    if (n === prazoMeses || currentSD - amortMes < 0.05) {
+      amortMes = currentSD;
+    }
+
+    const nextSD = Math.max(0, currentSD - amortMes);
+    if (n === parcelasPagas) {
+      return Math.round(nextSD * 100) / 100;
+    }
+    currentSD = nextSD;
+  }
+
+  return Math.round(currentSD * 100) / 100;
+}
+
 export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseData, contracts: Contract[]) {
   const rla = calculateRLA(income);
   const totalDespesas = calculateTotalExpenses(expenses);
@@ -70,9 +113,7 @@ export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseD
   let totalSaldoDevedorINPC = 0;
 
   const contractsCalculated = contracts.map(c => {
-    const saldoBaseOriginal = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBaseOriginal = getSaldoDevedorModulo6(c);
 
     const deducaoAbusiva = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     const saldoBaseAjustado = Math.max(0, saldoBaseOriginal - deducaoAbusiva);

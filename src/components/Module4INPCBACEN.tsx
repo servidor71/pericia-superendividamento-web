@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, BadgeCheck, Upload, Filter, Clipboard } from 'lucide-react';
 import type { Contract, MonetaryIndexItem } from '../types';
 import { initialContracts } from '../mockData';
-import { formatCurrency, getBacenStatus } from '../services/calculations';
+import { formatCurrency, getBacenStatus, getSaldoDevedorModulo6 } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 import { ModuleImportacaoIndices } from './ModuleImportacaoIndices';
 
@@ -62,19 +62,15 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
     return acc + (vlr * fator);
   }, 0);
 
-  // Cálculo Totais Aba 2 (Saldo Devedor Restante pós Última Parcela)
+  // Cálculo Totais Aba 2 (Saldo Devedor Restante pós Última Parcela do Módulo 6)
   const totalSaldoDevedorOriginal = filteredContracts.reduce((acc, c) => {
-    const saldoBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     return acc + Math.max(0, saldoBase - deducao);
   }, 0);
 
   const totalSaldoDevedorCorrigido7Casas = filteredContracts.reduce((acc, c) => {
-    const saldoBase = c.saldoDevedorRefUltimaParcela !== undefined 
-      ? c.saldoDevedorRefUltimaParcela 
-      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+    const saldoBase = getSaldoDevedorModulo6(c);
     const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     const saldoAjustado = Math.max(0, saldoBase - deducao);
     const fator = c.fatorCorrecao7Casas || 1.0;
@@ -518,9 +514,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-200 font-normal">
                   {filteredContracts.map((c, idx) => {
-                    let saldoBaseOriginal = c.saldoDevedorRefUltimaParcela !== undefined 
-                      ? c.saldoDevedorRefUltimaParcela 
-                      : (c.valorParcelaAtual * c.qtdParcelasRestantes);
+                    let saldoBaseOriginal = getSaldoDevedorModulo6(c);
                     let deducaoAbusiva = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
                     let saldoBaseAjustado = Math.max(0, saldoBaseOriginal - deducaoAbusiva);
                     let fator7Casas = c.fatorCorrecao7Casas || 1.0;
