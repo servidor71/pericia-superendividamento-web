@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TableProperties, Sparkles, Trash2 } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
 import { generatePriceSchedule, formatCurrency, getSaldoDevedorModulo6 } from '../services/calculations';
@@ -9,6 +9,8 @@ interface ModulePlanoCompulsorioProps {
   expenses: ExpenseData;
   contracts: Contract[];
   onContractsChange: (updated: Contract[]) => void;
+  taxaJurosAm?: number;
+  onTaxaJurosChange?: (taxa: number) => void;
 }
 
 export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioProps> = ({
@@ -16,12 +18,25 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
   expenses: _expenses,
   contracts,
   onContractsChange,
+  taxaJurosAm: taxaJurosProp = 1.63,
+  onTaxaJurosChange,
 }) => {
   const [isEditing, setIsEditing] = useState(true);
 
   // Parâmetros editáveis do Plano Compulsório 60x Rateio
-  const [taxaJurosAm, setTaxaJurosAm] = useState<number>(1.48); // Taxa padrão 1.48% a.m. da imagem
+  const [taxaJurosAm, setTaxaJurosAmState] = useState<number>(taxaJurosProp);
   const [prazoMeses, setPrazoMeses] = useState<number>(60); // 60 parcelas
+
+  useEffect(() => {
+    setTaxaJurosAmState(taxaJurosProp);
+  }, [taxaJurosProp]);
+
+  const handleTaxaJurosChange = (val: number) => {
+    setTaxaJurosAmState(val);
+    if (onTaxaJurosChange) {
+      onTaxaJurosChange(val);
+    }
+  };
 
   // 1. Cálculo do Saldo Devedor TOTAL ORIGINAL (antes da atualização monetária)
   const totalSaldoDevedorOriginal = contracts.reduce((acc, c) => {
@@ -126,7 +141,7 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
   };
 
   const handleResetToDefault = () => {
-    setTaxaJurosAm(1.48);
+    handleTaxaJurosChange(1.63);
     setPrazoMeses(60);
   };
 
@@ -157,7 +172,7 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
               step="0.01"
               disabled={!isEditing}
               value={taxaJurosAm}
-              onChange={(e) => setTaxaJurosAm(parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleTaxaJurosChange(parseFloat(e.target.value) || 0)}
               className="w-14 px-1 py-0.5 border border-[#DCD8CD] rounded-lg font-black text-[#1C4E5E] text-center bg-white"
             />
             <span className="font-bold text-slate-500">% a.m.</span>

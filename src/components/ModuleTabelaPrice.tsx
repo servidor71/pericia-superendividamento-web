@@ -8,19 +8,38 @@ interface ModulePriceProps {
   income: IncomeData;
   expenses: ExpenseData;
   contracts: Contract[];
+  taxaJurosAm?: number;
+  onTaxaJurosChange?: (taxa: number) => void;
 }
 
-export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({ income, expenses, contracts }) => {
+export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({ 
+  income, 
+  expenses, 
+  contracts,
+  taxaJurosAm: taxaJurosProp = 1.63,
+  onTaxaJurosChange,
+}) => {
   const summary = calculateFinancialSummary(income, expenses, contracts);
   const [isEditing, setIsEditing] = useState(true);
 
   // Parâmetros editáveis da Tabela Price - Inicializados com o Saldo Devedor Restante Atualizado
-  const [taxaJurosAm, setTaxaJurosAm] = useState<number>(1.63);
+  const [taxaJurosAm, setTaxaJurosAmState] = useState<number>(taxaJurosProp);
   const [saldoInicialCustom, setSaldoInicialCustom] = useState<number>(
     Math.round((summary.totalSaldoDevedorINPC || 0) * 100) / 100
   );
   const [prazoMeses, setPrazoMeses] = useState<number>(60);
   const [notaTaxa, setNotaTaxa] = useState<string>('');
+
+  useEffect(() => {
+    setTaxaJurosAmState(taxaJurosProp);
+  }, [taxaJurosProp]);
+
+  const handleTaxaJurosChange = (val: number) => {
+    setTaxaJurosAmState(val);
+    if (onTaxaJurosChange) {
+      onTaxaJurosChange(val);
+    }
+  };
 
   // Sincronização Automática com o Saldo Devedor Restante Atualizado (INPC/IPCA) dos Contratos
   useEffect(() => {
@@ -43,14 +62,14 @@ export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({ income, expenses
   const handleClearPriceData = () => {
     if (confirm('Deseja zerar os valores de simulação da Tabela Price?')) {
       setSaldoInicialCustom(0);
-      setTaxaJurosAm(0);
+      handleTaxaJurosChange(0);
       setPrazoMeses(60);
       setNotaTaxa('');
     }
   };
 
   const handleResetToCalculatedSaldo = () => {
-    setTaxaJurosAm(1.63);
+    handleTaxaJurosChange(1.63);
     setSaldoInicialCustom(summary.totalSaldoDevedorINPC || 0);
     setPrazoMeses(60);
     setNotaTaxa('');
@@ -162,7 +181,7 @@ export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({ income, expenses
                 step="0.01"
                 disabled={!isEditing}
                 value={taxaJurosAm}
-                onChange={(e) => setTaxaJurosAm(parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleTaxaJurosChange(parseFloat(e.target.value) || 0)}
                 className="w-full px-2 py-0.5 border border-slate-300 rounded font-extrabold text-blue-900 text-xs bg-white disabled:bg-slate-100"
               />
               <span className="font-bold text-blue-900 text-[11px] shrink-0">% a.m</span>

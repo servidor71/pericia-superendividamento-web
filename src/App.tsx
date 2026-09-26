@@ -93,6 +93,7 @@ export function App() {
   const [expenses, setExpenses] = useState<ExpenseData>(initialExpenseData);
   const [contracts, setContracts] = useState<Contract[]>(initialContracts);
   const [quesitos] = useState<QuesitoPericial[]>(initialQuesitos);
+  const [taxaJurosPlano, setTaxaJurosPlano] = useState<number>(1.63);
 
   // Subscription Plan State (Rigorously Enforced Features)
   const [subscription, setSubscription] = useState<SubscriptionConfig>({
@@ -550,15 +551,15 @@ export function App() {
               )}
 
               {activeTab === 13 && (
-                <ModuleDemonstracaoTotalPagoContrato income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} />
+                <ModuleDemonstracaoTotalPagoContrato income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} />
               )}
 
               {activeTab === 14 && (
-                <ModuleJurosETIRCredor income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} />
+                <ModuleJurosETIRCredor income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} />
               )}
 
               {activeTab === 15 && (
-                <ModuleTabelaPrice income={income} expenses={expenses} contracts={contracts} />
+                <ModuleTabelaPrice income={income} expenses={expenses} contracts={contracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
               {activeTab === 16 && (
@@ -569,7 +570,7 @@ export function App() {
               )}
 
               {activeTab === 17 && (
-                <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} />
+                <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
               {activeTab === 18 && (

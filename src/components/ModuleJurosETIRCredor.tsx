@@ -9,6 +9,7 @@ interface ModuleJurosETIRCredorProps {
   expenses: ExpenseData;
   contracts: Contract[];
   onContractsChange: (updated: Contract[]) => void;
+  taxaJurosAm?: number;
 }
 
 export const ModuleJurosETIRCredor: React.FC<ModuleJurosETIRCredorProps> = ({
@@ -16,11 +17,11 @@ export const ModuleJurosETIRCredor: React.FC<ModuleJurosETIRCredorProps> = ({
   expenses: _expenses,
   contracts,
   onContractsChange,
+  taxaJurosAm = 1.63,
 }) => {
   const [isEditing, setIsEditing] = useState(true);
 
   // Parâmetros do Plano Compulsório 60x Rateio
-  const taxaJurosAm = 1.48; // 1.48% a.m.
   const prazoMeses = 60; // 60 parcelas
 
   // 1. Cálculo do Saldo Devedor Total Original acumulado reativo
