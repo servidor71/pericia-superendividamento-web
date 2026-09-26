@@ -1391,7 +1391,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-black text-[#1C2B33] font-serif-header">
-              Módulo 18: Emissão do Laudo Pericial, Parecer Técnico & Exportações
+              Módulo 19: Emissão do Laudo Pericial, Parecer Técnico & Exportações
             </h2>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               Parecer Técnico Completo (Lei 14.181/2021), Laudo Pericial em PDF/Word, Minuta de Petição e Quesitos

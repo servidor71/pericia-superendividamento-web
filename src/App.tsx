@@ -567,13 +567,14 @@ export function App() {
               )}
 
               {activeTab === 17 && (
-                <div className="space-y-6">
-                  <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} />
-                  <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
-                </div>
+                <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} />
               )}
 
               {activeTab === 18 && (
+                <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
+              )}
+
+              {activeTab === 19 && (
                 <Module7LaudoExportacoes
                   process={process}
                   income={income}

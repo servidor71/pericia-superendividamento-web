@@ -155,7 +155,7 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-black text-[#1C2B33] font-serif-header">
-              Módulo 17: Plano de Pagamento Compulsório ({prazoMeses} Parcelas - Rateio Proporcional Price)
+              Módulo 18: Plano de Pagamento Compulsório ({prazoMeses} Parcelas - Rateio Proporcional Price)
             </h2>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               Rateio Proporcional Estrito calculated sobre o Saldo Devedor Original (Art. 104-B, §4º, CDC)

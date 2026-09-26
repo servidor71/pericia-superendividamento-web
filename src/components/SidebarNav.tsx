@@ -39,8 +39,9 @@ export const sidebarModules = [
   { id: 14, label: 'Módulo 14: Cálculo dos Juros Pagos & TIR do Credor', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TrendingUp },
   { id: 15, label: 'Módulo 15: Amortização Tabela Price (60 Parcelas)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
   { id: 16, label: 'Módulo 16: Consolidação do Passivo & Capacidade de Pagamento', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
-  { id: 17, label: 'Módulo 17: Engines de Repactuação & Plano Compulsório (Rateio Proporcional)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
-  { id: 18, label: 'Módulo 18: Parecer Técnico, Emissão do Laudo Pericial & Exportações', group: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL', icon: Award },
+  { id: 17, label: 'Módulo 17: Engines de Repactuação (Plano Compulsório 60x & Voluntário)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
+  { id: 18, label: 'Módulo 18: Plano de Pagamento Compulsório (Rateio Proporcional Price)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
+  { id: 19, label: 'Módulo 19: Parecer Técnico, Emissão do Laudo Pericial & Exportações', group: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL', icon: Award },
 ];
 
 export const phaseDefinitions = [
@@ -72,13 +73,13 @@ export const phaseDefinitions = [
     id: 'fase5',
     shortLabel: 'Fase V: Repactuação 60x',
     fullTitle: 'FASE V - REPACTUAÇÃO & PLANOS 60X',
-    modules: [13, 14, 15, 16, 17],
+    modules: [13, 14, 15, 16, 17, 18],
   },
   {
     id: 'fase6',
     shortLabel: 'Fase VI: Laudo Pericial',
     fullTitle: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL',
-    modules: [18],
+    modules: [19],
   },
 ];
 
@@ -206,7 +207,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, setActiveTab 
 
           <div className="text-center px-1">
             <span className="text-[11px] font-extrabold text-[#1C4E5E] leading-tight block truncate max-w-[200px] sm:max-w-[260px]">
-              Módulo {activeTab}/18: {currentModule.label.replace(/^\d+\.\s*/, '')}
+              Módulo {activeTab}/19: {currentModule.label.replace(/^\d+\.\s*/, '')}
             </span>
           </div>
 
