@@ -90,6 +90,49 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({
     };
   });
 
+  // 5. Linhas do Rateio Proporcional Voluntário (Aba Simulador Voluntário)
+  let sumSaldoComDesconto = 0;
+  let sumParcelaVoluntaria = 0;
+  let sumTotalQuitadoVoluntario = 0;
+
+  const fatorDesconto = 1 - (descontoAcordoPercent / 100);
+  const totalPassivoComDesconto = Math.round((totalSaldoDevedorAtualizado * fatorDesconto) * 100) / 100;
+  const parcelaUnificadaTotal = Math.round((totalPassivoComDesconto / (prazoVoluntarioMeses || 60)) * 100) / 100;
+
+  const voluntarioRows = contracts.map((c) => {
+    const saldoBase = getSaldoDevedorModulo6(c);
+    const deducao = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
+    const saldoDevedorOriginal = Math.max(0, saldoBase - deducao);
+    
+    const fator = c.fatorCorrecao7Casas || 1.0;
+    const saldoDevedorAtualizado = saldoDevedorOriginal * fator;
+
+    const saldoComDesconto = Math.round((saldoDevedorAtualizado * fatorDesconto) * 100) / 100;
+
+    const pesoPercentual = totalSaldoDevedorOriginal > 0 
+      ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
+      : 0;
+
+    const rawParcelaVoluntaria = parcelaUnificadaTotal * (pesoPercentual / 100);
+    const parcelaVoluntariaPMT = Math.round(rawParcelaVoluntaria * 100) / 100;
+
+    const totalQuitadoVoluntario = Math.round((parcelaVoluntariaPMT * (prazoVoluntarioMeses || 60)) * 100) / 100;
+
+    sumSaldoComDesconto += saldoComDesconto;
+    sumParcelaVoluntaria += parcelaVoluntariaPMT;
+    sumTotalQuitadoVoluntario += totalQuitadoVoluntario;
+
+    return {
+      credor: c.credor,
+      numeroContrato: c.numeroContrato,
+      saldoDevedorAtualizado,
+      saldoComDesconto,
+      pesoPercentual,
+      parcelaVoluntariaPMT,
+      totalQuitadoVoluntario,
+    };
+  });
+
   return (
     <div className="space-y-6 pb-24 w-full">
       
@@ -312,19 +355,71 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({
               <div className="bg-white p-3 rounded border border-slate-200">
                 <span className="text-[10px] text-slate-500 block uppercase font-bold">Passivo com Desconto ({descontoAcordoPercent}%)</span>
                 <span className="text-sm font-extrabold text-blue-900">
-                  {formatCurrency(summary.totalSaldoDevedorINPC * (1 - descontoAcordoPercent / 100))}
+                  {formatCurrency(totalPassivoComDesconto)}
                 </span>
               </div>
               <div className="bg-white p-3 rounded border border-slate-200">
                 <span className="text-[10px] text-slate-500 block uppercase font-bold">Parcela Unificada Simulação</span>
                 <span className="text-sm font-extrabold text-emerald-700">
-                  {formatCurrency((summary.totalSaldoDevedorINPC * (1 - descontoAcordoPercent / 100)) / (prazoVoluntarioMeses || 60))}
+                  {formatCurrency(parcelaUnificadaTotal)}
                 </span>
               </div>
               <div className="bg-white p-3 rounded border border-slate-200">
                 <span className="text-[10px] text-slate-500 block uppercase font-bold">Carência Pactuada</span>
                 <span className="text-sm font-extrabold text-amber-700">{carenciaDias} dias</span>
               </div>
+            </div>
+          </div>
+
+          {/* Tabela de Rateio Proporcional do Acordo Voluntário */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-4 bg-emerald-50/80 border-b border-emerald-200 text-slate-900 flex justify-between items-center">
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-900">
+                Rateio Proporcional da Parcela Unificada no Acordo Voluntário ({prazoVoluntarioMeses} Parcelas Mensais)
+              </span>
+              <span className="text-xs font-mono font-bold text-emerald-800">
+                Total Quitado: {formatCurrency(sumTotalQuitadoVoluntario)}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-extrabold uppercase text-[10px]">
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Credor</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">N.º Contrato</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Saldo Atualizado (R$)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Saldo com Desconto ({descontoAcordoPercent}%) (R$)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Peso Rateio (%)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Parcela Proporcional Voluntária (R$)</th>
+                    <th className="py-2.5 px-3 text-center">Total Quitado em {prazoVoluntarioMeses} Meses (R$)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 font-normal">
+                  {voluntarioRows.map((v, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 font-normal text-slate-800">
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{v.credor}</td>
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-mono text-slate-700 font-normal">{v.numeroContrato}</td>
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{formatCurrency(v.saldoDevedorAtualizado)}</td>
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900">{formatCurrency(v.saldoComDesconto)}</td>
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900">{formatPercent(v.pesoPercentual)}</td>
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-emerald-800">{formatCurrency(v.parcelaVoluntariaPMT)}</td>
+                      <td className="py-2.5 px-3 text-center font-normal text-blue-950">{formatCurrency(v.totalQuitadoVoluntario)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-slate-100 text-slate-900 font-extrabold text-xs uppercase border-t-2 border-slate-300">
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">TOTAL ACORDO VOLUNTÁRIO ({prazoVoluntarioMeses} MESES)</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{voluntarioRows.length} Contratos</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-slate-900">{formatCurrency(totalSaldoDevedorAtualizado)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-blue-900 font-black">{formatCurrency(totalPassivoComDesconto)}</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">100.00%</td>
+                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-emerald-800 font-black">{formatCurrency(sumParcelaVoluntaria)}</td>
+                    <td className="py-2.5 px-3 text-center text-blue-900 font-black">{formatCurrency(sumTotalQuitadoVoluntario)}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         </div>
