@@ -64,8 +64,9 @@ export const ModuleDemonstracaoTotalPagoContrato: React.FC<ModuleDemonstracaoTot
       ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
       : 0;
 
-    const pmtMensalIndividual = pmtGlobalTotal * (percentualRateio / 100);
-    const prestacoesRepactuadas = pmtMensalIndividual * prazoMeses;
+    const rawPmtIndividual = pmtGlobalTotal * (percentualRateio / 100);
+    const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
+    const prestacoesRepactuadas = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
 
     // 4. Total do Contrato (Original + Repactuado)
     const totalContrato = prestacoesPagas + prestacoesRepactuadas;

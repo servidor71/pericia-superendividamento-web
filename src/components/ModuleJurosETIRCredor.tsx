@@ -63,8 +63,9 @@ export const ModuleJurosETIRCredor: React.FC<ModuleJurosETIRCredorProps> = ({
       ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
       : 0;
 
-    const pmtMensalIndividual = pmtGlobalTotal * (percentualRateio / 100);
-    const prestacoesRepactuadas = pmtMensalIndividual * prazoMeses;
+    const rawPmtIndividual = pmtGlobalTotal * (percentualRateio / 100);
+    const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
+    const prestacoesRepactuadas = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
 
     // 4. Total a ser pago (repactuação) = Pagas + Repactuadas
     const totalASerPago = prestacoesPagas + prestacoesRepactuadas;

@@ -59,11 +59,12 @@ export const ModulePlanoPagamentoCompulsorio: React.FC<ModulePlanoCompulsorioPro
       ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
       : 0;
 
-    // PMT Mensal individual proporcional
-    const pmtMensalIndividual = pmtGlobalTotal * (percentualRateio / 100);
+    // PMT Mensal individual proporcional (arredondada para 2 casas decimais)
+    const rawPmtIndividual = pmtGlobalTotal * (percentualRateio / 100);
+    const pmtMensalIndividual = Math.round(rawPmtIndividual * 100) / 100;
 
-    // Total pago no plano (PMT * prazoMeses)
-    const totalPagoNoPlano = pmtMensalIndividual * prazoMeses;
+    // Total pago no plano = PMT Mensal (2 casas decimais) * prazo em meses do plano
+    const totalPagoNoPlano = Math.round((pmtMensalIndividual * prazoMeses) * 100) / 100;
 
     sumTotalPago += totalPagoNoPlano;
 
