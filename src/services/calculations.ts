@@ -54,17 +54,16 @@ export function calculateTotalExpenses(expenses: ExpenseData): number {
  * Apura o Saldo Devedor do Módulo 6 (Saldo Devedor por Prestações Pagas no Sistema Price)
  */
 export function getSaldoDevedorModulo6(c: Contract): number {
-  if (c.saldoDevedorRefUltimaParcela !== undefined && c.saldoDevedorRefUltimaParcela > 0) {
-    return c.saldoDevedorRefUltimaParcela;
-  }
-
   const valorPrincipal = Number(c.valorLiberadoContrato) || 0;
   const taxaJurosAm = Number(c.taxaJurosMes) || 0;
   const prazoMeses = Number(c.qtdParcelasTotal) || 0;
   const prestacaoAtual = Number(c.valorParcelaAtual) || 0;
   const parcelasPagas = Number(c.qtdParcelasPagas) || 0;
 
-  if (valorPrincipal <= 0 || prazoMeses <= 0) return 0;
+  if (valorPrincipal <= 0 || prazoMeses <= 0) {
+    return c.saldoDevedorRefUltimaParcela || 0;
+  }
+
   if (parcelasPagas === 0) return valorPrincipal;
 
   const iContrato = taxaJurosAm / 100;
