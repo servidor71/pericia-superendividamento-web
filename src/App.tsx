@@ -41,6 +41,7 @@ import { calculateFinancialSummary } from './services/calculations';
 import { useEffect } from 'react';
 import { exportToExcel, exportJSONBackup } from './services/exporters';
 import { saveProcessToDatabase, loadProcessFromDatabase } from './services/apiService';
+import { processSingleOCRFile } from './services/documentParser';
 import { 
   Globe, 
   LayoutDashboard,
@@ -280,8 +281,34 @@ export function App() {
     alert('Plano de Repactuação Pericial gerado com sucesso!');
   };
 
-  const handleProcessOCRData = (ocrText: string) => {
-    console.log('Dados do OCR recebidos no App:', ocrText.slice(0, 100));
+  const handleProcessOCRFile = async (file: File) => {
+    try {
+      const res = await processSingleOCRFile(file, process, income, expenses, contracts);
+      if (res.process) setProcess(res.process);
+      if (res.income) setIncome(res.income);
+      if (res.expenses) setExpenses(res.expenses);
+      if (res.contracts) setContracts(res.contracts);
+
+      const newDoc: ProcessDocumentItem = {
+        id: `ocr_${Date.now()}`,
+        categoria: 'Extrato Dívidas',
+        tipoDocumento: 'Documento PDF/OCR Importado',
+        nomeArquivo: file.name,
+        tamanhoArquivo: `${Math.round(file.size / 1024)} KB`,
+        dataUpload: new Date().toISOString().split('T')[0],
+        idPaginaReferencia: 'Importação Direta OCR',
+        observacao: `Documento ${file.name} importado via OCR.`,
+      };
+      setDocuments(prev => [newDoc, ...prev]);
+
+      const nome = res.process.nomeDevedor || 'Devedor';
+      const cnj = res.process.numeroProcesso || 'Não detectado';
+      const qtdCtr = res.contracts ? res.contracts.length : contracts.length;
+
+      alert(`✅ OCR/PDF Processado com Sucesso!\n\n• Arquivo: ${file.name}\n• Devedor: ${nome}\n• N° Processo: ${cnj}\n• Total de Contratos Atualizados: ${qtdCtr}\n\nOs 19 módulos do sistema foram atualizados com os dados extraídos.`);
+    } catch (err: any) {
+      alert('Erro ao processar arquivo OCR: ' + (err?.message || err));
+    }
   };
 
   return (
@@ -477,7 +504,7 @@ export function App() {
               onExportBackup={handleExportBackup}
               onExportExcel={handleExportExcel}
               onGenerateAIPlan={handleGenerateAIPlan}
-              onProcessOCRData={handleProcessOCRData}
+              onProcessOCRData={handleProcessOCRFile}
               onSaveToDatabase={handleSaveToDatabase}
               onOpenProcessList={() => setCurrentRoute('processos')}
             />

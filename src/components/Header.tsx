@@ -36,6 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+
   const handleSaveClick = async () => {
     if (!onSaveToDatabase) return;
     setIsSaving(true);
@@ -85,23 +87,25 @@ export const Header: React.FC<HeaderProps> = ({
     e.target.value = '';
   };
 
-  const handleOCRFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOCRFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setOcrSuccess(true);
-    if (onProcessOCRData) {
-      onProcessOCRData({
-        numeroProcesso: '',
-        nomeDevedor: '',
-        cpfCnpj: '',
-        salarioBruto: 0,
-        rppsInss: 0,
-        irrf: 0,
-      });
+    setIsOcrProcessing(true);
+    setOcrSuccess(false);
+
+    try {
+      if (onProcessOCRData) {
+        await onProcessOCRData(file);
+      }
+      setOcrSuccess(true);
+      setTimeout(() => setOcrSuccess(false), 5000);
+    } catch (err: any) {
+      alert('Erro ao processar o arquivo PDF/OCR: ' + (err?.message || err));
+    } finally {
+      setIsOcrProcessing(false);
+      e.target.value = '';
     }
-    setTimeout(() => setOcrSuccess(false), 5000);
-    e.target.value = '';
   };
 
   return (
@@ -195,15 +199,18 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <button
             onClick={() => ocrInputRef.current?.click()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-[#1C4E5E] bg-[#E7F3EE] hover:bg-[#D5EADF] border border-[#C5E2D6] rounded-lg transition-all shadow-2xs cursor-pointer"
+            disabled={isOcrProcessing}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-[#1C4E5E] bg-[#E7F3EE] hover:bg-[#D5EADF] border border-[#C5E2D6] rounded-lg transition-all shadow-2xs cursor-pointer disabled:opacity-50"
             title="Importar PDF, CCBs ou Extratos via OCR"
           >
-            {ocrSuccess ? (
+            {isOcrProcessing ? (
+              <Sparkles className="w-3 h-3 text-blue-600 animate-spin" />
+            ) : ocrSuccess ? (
               <CheckCircle2 className="w-3 h-3 text-emerald-600 animate-bounce" />
             ) : (
               <FileUp className="w-3 h-3 text-[#2E7D62]" />
             )}
-            <span>{ocrSuccess ? 'Extraído!' : 'Importar PDF/OCR'}</span>
+            <span>{isOcrProcessing ? 'Extraindo...' : ocrSuccess ? 'Extraído!' : 'Importar PDF/OCR'}</span>
           </button>
 
           <input

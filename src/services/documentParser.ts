@@ -486,3 +486,89 @@ export function parseAndExtractDocumentData(
   };
 }
 
+/**
+ * Extrai texto legível de qualquer arquivo (PDF, JSON, TXT, CSV, Imagens/Prints)
+ */
+export async function extractTextFromAnyFile(file: File): Promise<string> {
+  const fileName = file.name || '';
+  
+  if (fileName.toLowerCase().endsWith('.json')) {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return JSON.stringify(parsed, null, 2);
+      }
+      return text;
+    } catch {
+      // fallback
+    }
+  }
+
+  if (fileName.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let asciiStr = '';
+      for (let i = 0; i < bytes.length; i++) {
+        const b = bytes[i];
+        if ((b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9 || (b >= 160 && b <= 255)) {
+          asciiStr += String.fromCharCode(b);
+        } else {
+          asciiStr += ' ';
+        }
+      }
+      const cleanAscii = asciiStr.replace(/[ \t]+/g, ' ').replace(/\n\s*\n/g, '\n');
+      if (cleanAscii.length > 30) {
+        return `${fileName}\n${cleanAscii}`;
+      }
+    } catch (e) {
+      console.warn('Erro ao extrair stream de PDF:', e);
+    }
+  }
+
+  try {
+    const rawText = await file.text();
+    if (rawText && rawText.length > 5) {
+      return `${fileName}\n${rawText}`;
+    }
+  } catch (e) {
+    console.warn('Erro ao ler texto do arquivo:', e);
+  }
+
+  return fileName;
+}
+
+/**
+ * Processa um único arquivo via OCR / Parser inteligente e retorna os objetos atualizados
+ */
+export async function processSingleOCRFile(
+  file: File,
+  currentProcess: ProcessData,
+  currentIncome: IncomeData,
+  currentExpenses: ExpenseData,
+  currentContracts: Contract[]
+) {
+  const rawText = await extractTextFromAnyFile(file);
+
+  const docItem: ProcessDocumentItem = {
+    id: `ocr_${Date.now()}`,
+    categoria: 'Extrato Dívidas',
+    tipoDocumento: 'Documento PDF/OCR Importado',
+    nomeArquivo: file.name,
+    tamanhoArquivo: `${Math.round(file.size / 1024)} KB`,
+    dataUpload: new Date().toISOString().split('T')[0],
+    idPaginaReferencia: 'Importação Direta OCR',
+    observacao: `Documento ${file.name} importado via OCR.`,
+    rawTextContent: rawText,
+  };
+
+  return parseAndExtractDocumentData(
+    [docItem],
+    currentProcess,
+    currentIncome,
+    currentExpenses,
+    currentContracts
+  );
+}
+

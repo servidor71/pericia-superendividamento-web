@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { FileUp, Cpu, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface TopBannerOCRProps {
-  onProcessExtractedData: (extracted: any) => void;
+  onProcessExtractedData: (file: File) => Promise<void> | void;
 }
 
 export const TopBannerOCR: React.FC<TopBannerOCRProps> = ({ onProcessExtractedData }) => {
@@ -16,7 +16,7 @@ export const TopBannerOCR: React.FC<TopBannerOCRProps> = ({ onProcessExtractedDa
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -24,43 +24,16 @@ export const TopBannerOCR: React.FC<TopBannerOCRProps> = ({ onProcessExtractedDa
     setExtractedSuccess(false);
     setLastUploadedFile(file.name);
 
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      setTimeout(() => {
-        setIsProcessing(false);
-        setExtractedSuccess(true);
-
-        const contentStr = event.target?.result as string;
-        let mockExtracted: any = {};
-
-        // Tentativa de parsing inteligente se for JSON
-        if (file.name.endsWith('.json') && contentStr) {
-          try {
-            const parsed = JSON.parse(contentStr);
-            mockExtracted = {
-              numeroProcesso: parsed.process?.numeroProcesso || parsed.numeroProcesso,
-              nomeDevedor: parsed.process?.nomeDevedor || parsed.nomeDevedor,
-              cpfCnpj: parsed.process?.cpfCnpj || parsed.cpfCnpj,
-              salarioBruto: parsed.income?.salarioBruto || parsed.salarioBruto,
-              rppsInss: parsed.income?.rppsInss || parsed.rppsInss,
-              irrf: parsed.income?.irrf || parsed.irrf,
-            };
-          } catch (err) {
-            // fallback
-          }
-        }
-
-        onProcessExtractedData(mockExtracted);
-
-        setTimeout(() => setExtractedSuccess(false), 7000);
-      }, 1000);
-    };
-
-    // Lê como texto ou arraybuffer
-    reader.readAsText(file);
-    // Limpa a seleção para permitir selecionar o mesmo arquivo novamente
-    e.target.value = '';
+    try {
+      await onProcessExtractedData(file);
+      setExtractedSuccess(true);
+      setTimeout(() => setExtractedSuccess(false), 7000);
+    } catch (err: any) {
+      alert('Erro ao extrair arquivo OCR: ' + (err?.message || err));
+    } finally {
+      setIsProcessing(false);
+      e.target.value = '';
+    }
   };
 
   return (
