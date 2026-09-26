@@ -93,6 +93,57 @@ export function getSaldoDevedorModulo6(c: Contract): number {
   return Math.round(currentSD * 100) / 100;
 }
 
+/**
+ * Apura a Data de Referência da Última Parcela Paga do Módulo 6
+ */
+export function getDataRefUltimaParcelaModulo6(c: Contract): string {
+  if (c.dataReferenciaUltimoPagamento && c.dataReferenciaUltimoPagamento.trim() !== '' && c.dataReferenciaUltimoPagamento !== '2026-07-01') {
+    return c.dataReferenciaUltimoPagamento;
+  }
+
+  const n = Number(c.qtdParcelasPagas) || 0;
+  const dtContratoStr = c.dataContrato || '';
+  const dt1aParcStr = c.dataPrimeiraParcela || '';
+
+  if (n === 0) {
+    return dtContratoStr || new Date().toISOString().split('T')[0];
+  }
+
+  if (dt1aParcStr && dt1aParcStr.trim() !== '') {
+    const parts = dt1aParcStr.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0]);
+      const m = (parseInt(parts[1]) - 1) + (n - 1);
+      const d = parseInt(parts[2]);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const dt = new Date(y, m, d);
+        const yStr = dt.getFullYear();
+        const mStr = String(dt.getMonth() + 1).padStart(2, '0');
+        const dStr = String(dt.getDate()).padStart(2, '0');
+        return `${yStr}-${mStr}-${dStr}`;
+      }
+    }
+  }
+
+  if (dtContratoStr && dtContratoStr.trim() !== '') {
+    const parts = dtContratoStr.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0]);
+      const m = (parseInt(parts[1]) - 1) + n;
+      const d = parseInt(parts[2]);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const dt = new Date(y, m, d);
+        const yStr = dt.getFullYear();
+        const mStr = String(dt.getMonth() + 1).padStart(2, '0');
+        const dStr = String(dt.getDate()).padStart(2, '0');
+        return `${yStr}-${mStr}-${dStr}`;
+      }
+    }
+  }
+
+  return dtContratoStr || new Date().toISOString().split('T')[0];
+}
+
 export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseData, contracts: Contract[]) {
   const rla = calculateRLA(income);
   const totalDespesas = calculateTotalExpenses(expenses);

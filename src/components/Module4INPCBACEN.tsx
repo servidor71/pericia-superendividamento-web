@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, BadgeCheck, Upload, Filter, Clipboard } from 'lucide-react';
 import type { Contract, MonetaryIndexItem } from '../types';
 import { initialContracts } from '../mockData';
-import { formatCurrency, getBacenStatus, getSaldoDevedorModulo6 } from '../services/calculations';
+import { formatCurrency, getBacenStatus, getSaldoDevedorModulo6, getDataRefUltimaParcelaModulo6 } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 import { ModuleImportacaoIndices } from './ModuleImportacaoIndices';
 
@@ -515,6 +515,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                 <tbody className="divide-y divide-slate-200 font-normal">
                   {filteredContracts.map((c, idx) => {
                     let saldoBaseOriginal = getSaldoDevedorModulo6(c);
+                    let dataRefUltima = getDataRefUltimaParcelaModulo6(c);
                     let deducaoAbusiva = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
                     let saldoBaseAjustado = Math.max(0, saldoBaseOriginal - deducaoAbusiva);
                     let fator7Casas = c.fatorCorrecao7Casas || 1.0;
@@ -558,7 +559,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                           <input
                             type="date"
                             disabled={!isEditing}
-                            value={c.dataReferenciaUltimoPagamento || '2026-07-01'}
+                            value={dataRefUltima}
                             onChange={(e) => handleUpdate(c.id, 'dataReferenciaUltimoPagamento', e.target.value)}
                             className="px-1.5 py-0.5 border border-slate-300 rounded font-mono text-[11px] bg-white disabled:bg-slate-100 text-slate-800 font-normal"
                           />
