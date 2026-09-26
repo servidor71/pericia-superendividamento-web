@@ -109,9 +109,10 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({
 
     const saldoComDesconto = Math.round((saldoDevedorAtualizado * fatorDesconto) * 100) / 100;
 
-    const pesoPercentual = totalSaldoDevedorOriginal > 0 
+    const rawPeso = totalSaldoDevedorOriginal > 0 
       ? (saldoDevedorOriginal / totalSaldoDevedorOriginal) * 100 
       : 0;
+    const pesoPercentual = Math.round(rawPeso * 100) / 100;
 
     const rawParcelaVoluntaria = parcelaUnificadaTotal * (pesoPercentual / 100);
     const parcelaVoluntariaPMT = Math.round(rawParcelaVoluntaria * 100) / 100;
