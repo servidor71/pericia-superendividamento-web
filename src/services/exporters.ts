@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx-js-style';
 import type { ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProfessionalProfile, ProcessDocumentItem } from '../types';
-import { calculateFinancialSummary, calculateProportional60xPlan, calculateContractEvolution, getBacenStatus } from './calculations';
+import { calculateFinancialSummary, calculateProportional60xPlan, calculateContractEvolution, getBacenStatus, getSaldoDevedorModulo6 } from './calculations';
 
 // --- Color Constants matching App visual design ---
 const COLORS = {
@@ -464,7 +464,7 @@ export function exportToExcel(
       cells: [
         { value: 'Total Saldo Devedor Apurado por Pagas' },
         { value: '6. Saldo por Pagas', align: 'center' },
-        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), formula: `='6. Saldo por Pagas'!J${totalRow6}`, styleType: 'currency' }
+        { value: contracts.reduce((a, c) => a + getSaldoDevedorModulo6(c), 0), formula: `='6. Saldo por Pagas'!J${totalRow6}`, styleType: 'currency' }
       ]
     },
     {
@@ -832,7 +832,7 @@ export function exportToExcel(
           { value: c.valorSeguroPrestamista || 0, styleType: 'currency' as const },
           { value: c.valorTarifasAbusivas || 0, styleType: 'currency' as const },
           { value: c.expurgarAbusividades ? 'SIM' : 'NÃO', align: 'center' as const, styleType: c.expurgarAbusividades ? 'badge-amber' as const : 'default' as const },
-          { value: c.saldoDevedorRefUltimaParcela || 0, styleType: 'currency' as const }
+          { value: getSaldoDevedorModulo6(c), styleType: 'currency' as const }
         ]
       };
     }),
@@ -856,7 +856,7 @@ export function exportToExcel(
         { value: contracts.reduce((a, c) => a + (c.valorSeguroPrestamista || 0), 0), formula: `=SUM(O5:O${4 + N_contracts})`, styleType: 'currency' },
         { value: contracts.reduce((a, c) => a + (c.valorTarifasAbusivas || 0), 0), formula: `=SUM(P5:P${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), formula: `=SUM(R5:R${4 + N_contracts})`, styleType: 'currency' }
+        { value: contracts.reduce((a, c) => a + getSaldoDevedorModulo6(c), 0), formula: `=SUM(R5:R${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -891,7 +891,7 @@ export function exportToExcel(
       const pagas = c.qtdParcelasPagas || 0;
       const principal = c.valorLiberadoContrato || 0;
       const fator = c.fatorCorrecao7Casas || 1.0;
-      const sdApurado = c.saldoDevedorRefUltimaParcela || Math.max(0, principal - (pmt * pagas * 0.4));
+      const sdApurado = getSaldoDevedorModulo6(c);
       const sdCorrigido = sdApurado * fator;
 
       return {
@@ -924,7 +924,7 @@ export function exportToExcel(
         { value: '' },
         { value: '' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), formula: `=SUM(J5:J${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + getSaldoDevedorModulo6(c), 0), formula: `=SUM(J5:J${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: summary.totalSaldoDevedorINPC, formula: `=SUM(L5:L${4 + N_contracts})`, styleType: 'currency' }
       ]

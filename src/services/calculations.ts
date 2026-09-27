@@ -60,37 +60,69 @@ export function getSaldoDevedorModulo6(c: Contract): number {
   const prazoMeses = Number(c.qtdParcelasTotal) || 0;
   const prestacaoAtual = Number(c.valorParcelaAtual) || 0;
   const parcelasPagas = Number(c.qtdParcelasPagas) || 0;
+  const parcelasRestantes = Number(c.qtdParcelasRestantes) || Math.max(0, prazoMeses - parcelasPagas);
+  const saldoRef = Number(c.saldoDevedorRefUltimaParcela) || 0;
 
-  if (valorPrincipal <= 0 || prazoMeses <= 0) {
-    return c.saldoDevedorRefUltimaParcela || 0;
+  // 1. Se o saldo devedor de referência foi expressamente informado (> 0), utiliza prioritariamente
+  if (saldoRef > 0) {
+    return Math.round(saldoRef * 100) / 100;
   }
 
-  if (parcelasPagas === 0) return valorPrincipal;
+  // 2. Se houver valor principal e prazo > 0, apura a evolução Price pelas parcelas pagas
+  if (valorPrincipal > 0 && prazoMeses > 0) {
+    if (parcelasPagas === 0) return Math.round(valorPrincipal * 100) / 100;
 
-  const iContrato = taxaJurosAm / 100;
-  const pmtPriceCalculada = iContrato > 0
-    ? (valorPrincipal * (iContrato * Math.pow(1 + iContrato, prazoMeses))) / (Math.pow(1 + iContrato, prazoMeses) - 1)
-    : (valorPrincipal / prazoMeses);
+    const iContrato = taxaJurosAm / 100;
+    const pmtPriceCalculada = iContrato > 0
+      ? (valorPrincipal * (iContrato * Math.pow(1 + iContrato, prazoMeses))) / (Math.pow(1 + iContrato, prazoMeses) - 1)
+      : (valorPrincipal / prazoMeses);
 
-  const pmtEfetiva = prestacaoAtual > 0 ? prestacaoAtual : pmtPriceCalculada;
+    const pmtEfetiva = prestacaoAtual > 0 ? prestacaoAtual : pmtPriceCalculada;
 
-  let currentSD = valorPrincipal;
-  for (let n = 1; n <= prazoMeses; n++) {
-    const jurosMes = currentSD * iContrato;
-    let amortMes = pmtEfetiva - jurosMes;
+    let currentSD = valorPrincipal;
+    for (let n = 1; n <= prazoMeses; n++) {
+      const jurosMes = currentSD * iContrato;
+      let amortMes = pmtEfetiva - jurosMes;
 
-    if (n === prazoMeses || currentSD - amortMes < 0.05) {
-      amortMes = currentSD;
+      if (n === prazoMeses || currentSD - amortMes < 0.05) {
+        amortMes = currentSD;
+      }
+
+      const nextSD = Math.max(0, currentSD - amortMes);
+      if (n === parcelasPagas) {
+        return Math.round(nextSD * 100) / 100;
+      }
+      currentSD = nextSD;
     }
 
-    const nextSD = Math.max(0, currentSD - amortMes);
-    if (n === parcelasPagas) {
-      return Math.round(nextSD * 100) / 100;
+    if (currentSD > 0) {
+      return Math.round(currentSD * 100) / 100;
     }
-    currentSD = nextSD;
   }
 
-  return Math.round(currentSD * 100) / 100;
+  // 3. Fallbacks para contratos/cartões de crédito sem prazo preenchido (ex: NU FINANCEIRA, MIDWAY, MERCADO CRÉDITO):
+  // 3a. PMT * parcelasRestantes (se parcelasRestantes > 0 e PMT > 0)
+  if (prestacaoAtual > 0 && parcelasRestantes > 0) {
+    return Math.round(prestacaoAtual * parcelasRestantes * 100) / 100;
+  }
+
+  // 3b. Valor Liberado do Contrato
+  if (valorPrincipal > 0) {
+    return Math.round(valorPrincipal * 100) / 100;
+  }
+
+  // 3c. Valor Final Contratado
+  const valorFinal = Number(c.valorFinalContrato) || 0;
+  if (valorFinal > 0) {
+    return Math.round(valorFinal * 100) / 100;
+  }
+
+  // 3d. Valor da Parcela Atual (PMT)
+  if (prestacaoAtual > 0) {
+    return Math.round(prestacaoAtual * 100) / 100;
+  }
+
+  return 0;
 }
 
 /**
@@ -178,6 +210,8 @@ export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseD
 
     return {
       ...c,
+      saldoDevedorRefUltimaParcela: c.saldoDevedorRefUltimaParcela || saldoBaseOriginal,
+      saldoBaseOriginal,
       saldoBaseAjustado,
       saldoINPC,
       deducaoAbusiva,
@@ -202,7 +236,7 @@ export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseD
 export function calculateProportional60xPlan(contracts: Contract[], capacidadeMensal: number): ProportionalInstallment[] {
   // 1. Apurar total do saldo INPC/IPCA com expurgos
   const contractsAjustados = contracts.map(c => {
-    let saldoBaseOriginal = c.valorParcelaAtual * c.qtdParcelasRestantes;
+    let saldoBaseOriginal = getSaldoDevedorModulo6(c);
     let deducaoAbusiva = c.expurgarAbusividades ? (c.valorSeguroPrestamista + c.valorTarifasAbusivas) : 0;
     let fator = c.fatorCorrecao7Casas || 1.0;
     let saldoINPC = Math.max(0, saldoBaseOriginal - deducaoAbusiva) * fator;
