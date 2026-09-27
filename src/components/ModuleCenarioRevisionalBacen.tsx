@@ -195,10 +195,11 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
             {/* Cabeçalho da Tabela - Colunas Centralizadas e Redimensionadas */}
             <thead>
               <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] text-center border-b border-slate-300">
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[28%]">Credor</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[18%]">N.º Contrato</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[26%]">Tipo de Crédito</th>
-                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[23%]">Encargo Mensal Taxa Média BACEN</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[25%]">Credor</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[17%]">N.º Contrato</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[23%]">Tipo de Crédito</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[15%]">Taxa BACEN (% a.m.)</th>
+                <th className="py-2.5 px-3 border-r border-slate-300 text-center align-middle w-[15%]">Encargo Mensal Taxa Média BACEN</th>
                 {isEditing && <th className="py-2.5 px-2 text-center align-middle w-[5%] no-print">Ações</th>}
               </tr>
             </thead>
@@ -252,6 +253,24 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
                     )}
                   </td>
 
+                  {/* Taxa BACEN (% a.m.) */}
+                  <td className="py-2.5 px-3 text-center border-r border-slate-200">
+                    {isEditing ? (
+                      <div className="flex items-center justify-center gap-0.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={row.taxaMediaBacenMes !== undefined && row.taxaMediaBacenMes !== null ? Number(row.taxaMediaBacenMes).toFixed(2) : '0.00'}
+                          onChange={(e) => handleUpdateContractField(row.id, 'taxaMediaBacenMes', parseFloat(e.target.value) || 0)}
+                          className="w-16 text-right px-1.5 py-0.5 border border-slate-300 rounded font-normal text-slate-800 text-[11px] bg-white"
+                        />
+                        <span className="text-[10px] text-slate-500 font-normal">%</span>
+                      </div>
+                    ) : (
+                      <span className="font-mono text-slate-800">{Number(row.taxaMediaBacenMes || 0).toFixed(2)}% a.m.</span>
+                    )}
+                  </td>
+
                   {/* Encargo Mensal Taxa Media BACEN */}
                   <td className="py-2.5 px-3 text-center font-mono font-bold text-slate-900 border-r border-slate-200">
                     {formatCurrency(row.pmtBacen)}
@@ -276,7 +295,7 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
             {/* Rodapé com Totais Finais do Cenário Revisional BACEN */}
             <tfoot>
               <tr className="bg-slate-100 text-slate-900 font-black uppercase text-xs border-t-2 border-slate-300">
-                <td className="py-3 px-4 text-center font-black border-r border-slate-200" colSpan={3}>
+                <td className="py-3 px-4 text-center font-black border-r border-slate-200" colSpan={4}>
                   TOTAL ENCARGO MENSAL COM TAXA MÉDIA BACEN ==&gt;&gt;
                 </td>
                 <td className="py-3 px-4 text-center font-black font-mono text-emerald-800 text-sm" colSpan={isEditing ? 2 : 1}>
