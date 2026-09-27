@@ -13,14 +13,18 @@ interface Module6Props {
   income: IncomeData;
   expenses: ExpenseData;
   contracts: Contract[];
+  onContractsChange?: (updated: Contract[]) => void;
   taxaJurosAm?: number;
+  onTaxaJurosChange?: (rate: number) => void;
 }
 
 export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({ 
   income, 
   expenses, 
   contracts,
+  onContractsChange: _onContractsChange,
   taxaJurosAm = 1.63,
+  onTaxaJurosChange: _onTaxaJurosChange,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'compulsorio' | 'voluntario'>('compulsorio');
   const [isEditing, setIsEditing] = useState(true);

@@ -97,6 +97,30 @@ export function App() {
   const [monetaryIndices, setMonetaryIndices] = useState<MonetaryIndexItem[]>(initialMonetaryIndices);
   const [taxaJurosPlano, setTaxaJurosPlano] = useState<number>(1.63);
 
+  // Central handler for automatic bi-directional contract field synchronization across Modules 1 to 19
+  const handleContractsChange = (updatedContracts: Contract[]) => {
+    const syncedContracts = updatedContracts.map(c => {
+      const total = Number(c.qtdParcelasTotal) || 0;
+      const pagas = Number(c.qtdParcelasPagas) || 0;
+      const restantes = Math.max(0, total - pagas);
+
+      return {
+        ...c,
+        qtdParcelasTotal: total,
+        qtdParcelasPagas: pagas,
+        qtdParcelasRestantes: (c.qtdParcelasRestantes !== undefined && c.qtdParcelasRestantes !== restantes && c.qtdParcelasRestantes > 0 && total === 0)
+          ? Number(c.qtdParcelasRestantes)
+          : (restantes > 0 || total > 0 ? restantes : Number(c.qtdParcelasRestantes) || 0),
+        valorLiberadoContrato: Number(c.valorLiberadoContrato) || 0,
+        valorParcelaAtual: Number(c.valorParcelaAtual) || 0,
+        taxaJurosMes: Number(c.taxaJurosMes) || 0,
+        taxaMediaBacenMes: Number(c.taxaMediaBacenMes) || 0,
+        fatorCorrecao7Casas: Number(c.fatorCorrecao7Casas) || 1.0,
+      };
+    });
+    setContracts(syncedContracts);
+  };
+
   // Subscription Plan State (Rigorously Enforced Features)
   const [subscription, setSubscription] = useState<SubscriptionConfig>({
     planId: 'individual',
@@ -547,28 +571,28 @@ export function App() {
               )}
 
               {activeTab === 5 && (
-                <Module3CredoresContratos contracts={contracts} onContractsChange={setContracts} />
+                <Module3CredoresContratos contracts={contracts} onContractsChange={handleContractsChange} />
               )}
 
               {activeTab === 6 && (
-                <ModuleCalculoSaldoPrestacoesPagas income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} />
+                <ModuleCalculoSaldoPrestacoesPagas income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} />
               )}
 
               {activeTab === 7 && (
-                <ModuleAmortizacaoContratoIndividual contracts={contracts} onContractsChange={setContracts} />
+                <ModuleAmortizacaoContratoIndividual contracts={contracts} onContractsChange={handleContractsChange} />
               )}
 
               {activeTab === 8 && (
                 <Module4INPCBACEN
                   contracts={contracts}
-                  onContractsChange={setContracts}
+                  onContractsChange={handleContractsChange}
                   indicesList={monetaryIndices}
                   onIndicesChange={setMonetaryIndices}
                 />
               )}
 
               {activeTab === 9 && (
-                <ModuleSaldoAtualValorPago income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} />
+                <ModuleSaldoAtualValorPago income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} />
               )}
 
               {activeTab === 10 && (
@@ -576,7 +600,7 @@ export function App() {
               )}
 
               {activeTab === 11 && (
-                <ModuleCenarioRevisionalBacen income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} />
+                <ModuleCenarioRevisionalBacen income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} />
               )}
 
               {activeTab === 12 && (
@@ -584,11 +608,11 @@ export function App() {
               )}
 
               {activeTab === 13 && (
-                <ModuleDemonstracaoTotalPagoContrato income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} />
+                <ModuleDemonstracaoTotalPagoContrato income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} />
               )}
 
               {activeTab === 14 && (
-                <ModuleJurosETIRCredor income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} />
+                <ModuleJurosETIRCredor income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} />
               )}
 
               {activeTab === 15 && (
@@ -600,11 +624,11 @@ export function App() {
               )}
 
               {activeTab === 17 && (
-                <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} taxaJurosAm={taxaJurosPlano} />
+                <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
               {activeTab === 18 && (
-                <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={setContracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
+                <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
               {activeTab === 19 && (
