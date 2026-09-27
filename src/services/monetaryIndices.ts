@@ -1,4 +1,5 @@
 import type { MonetaryIndexItem, Contract } from '../types';
+import { getSaldoDevedorModulo6, getDataRefUltimaParcelaModulo6 } from './calculations';
 
 export const OFFICIAL_IBGE_SOURCE = 'Fonte: Série Histórica - IBGE';
 
@@ -37,24 +38,21 @@ export const defaultMonetaryIndices: MonetaryIndexItem[] = [
   { id: 'idx_27', competencia: '03/2026', ano: 2026, mes: 'MAR', numeroIndiceInpc: 7476.40, indiceInpcMes: 0.00, fatorInpcAcumulado7Casas: 1.1186777, numeroIndiceIpca: 7707.38, indiceIpcaMes: -0.41, fatorIpcaAcumulado7Casas: 1.1037430, fonte: OFFICIAL_IBGE_SOURCE },
 ];
 
-const MONTH_MAP: Record<string, { code: string; name: string }> = {
-  jan: { code: '01', name: 'JAN' }, janeiro: { code: '01', name: 'JAN' },
-  fev: { code: '02', name: 'FEV' }, fevereiro: { code: '02', name: 'FEV' },
-  mar: { code: '03', name: 'MAR' }, março: { code: '03', name: 'MAR' }, marco: { code: '03', name: 'MAR' },
-  abr: { code: '04', name: 'ABR' }, abril: { code: '04', name: 'ABR' },
-  mai: { code: '05', name: 'MAI' }, maio: { code: '05', name: 'MAI' },
-  jun: { code: '06', name: 'JUN' }, junho: { code: '06', name: 'JUN' },
-  jul: { code: '07', name: 'JUL' }, julho: { code: '07', name: 'JUL' },
-  ago: { code: '08', name: 'AGO' }, agosto: { code: '08', name: 'AGO' },
-  set: { code: '09', name: 'SET' }, setembro: { code: '09', name: 'SET' },
-  out: { code: '10', name: 'OUT' }, outubro: { code: '10', name: 'OUT' },
-  nov: { code: '11', name: 'NOV' }, novembro: { code: '11', name: 'NOV' },
-  dez: { code: '12', name: 'DEZ' }, dezembro: { code: '12', name: 'DEZ' },
+const MONTH_MAP: Record<string, { code: string; name: string; num: number }> = {
+  jan: { code: '01', name: 'JAN', num: 1 }, janeiro: { code: '01', name: 'JAN', num: 1 },
+  fev: { code: '02', name: 'FEV', num: 2 }, fevereiro: { code: '02', name: 'FEV', num: 2 },
+  mar: { code: '03', name: 'MAR', num: 3 }, março: { code: '03', name: 'MAR', num: 3 }, marco: { code: '03', name: 'MAR', num: 3 },
+  abr: { code: '04', name: 'ABR', num: 4 }, abril: { code: '04', name: 'ABR', num: 4 },
+  mai: { code: '05', name: 'MAI', num: 5 }, maio: { code: '05', name: 'MAI', num: 5 },
+  jun: { code: '06', name: 'JUN', num: 6 }, junho: { code: '06', name: 'JUN', num: 6 },
+  jul: { code: '07', name: 'JUL', num: 7 }, julho: { code: '07', name: 'JUL', num: 7 },
+  ago: { code: '08', name: 'AGO', num: 8 }, agosto: { code: '08', name: 'AGO', num: 8 },
+  set: { code: '09', name: 'SET', num: 9 }, setembro: { code: '09', name: 'SET', num: 9 },
+  out: { code: '10', name: 'OUT', num: 10 }, outubro: { code: '10', name: 'OUT', num: 10 },
+  nov: { code: '11', name: 'NOV', num: 11 }, novembro: { code: '11', name: 'NOV', num: 11 },
+  dez: { code: '12', name: 'DEZ', num: 12 }, dezembro: { code: '12', name: 'DEZ', num: 12 },
 };
 
-/**
- * Converte valor numérico em string com tratamento de vírgulas/pontos e %
- */
 function parseNum(val: any): number {
   if (val === undefined || val === null) return 0;
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -64,9 +62,72 @@ function parseNum(val: any): number {
 }
 
 /**
- * Parser especial para o modelo oficial de Série Histórica IBGE (conforme imagem do usuário):
- * Layout: ANO | MÊS | NÚMERO ÍNDICE | VARIAÇÃO (%) [NO MÊS | 3 MESES | 6 MESES | NO ANO | 12 MESES]
- * Preserva o Ano quando informado uma única vez por grupo e mapeia a fonte para "Fonte: Série Histórica - IBGE".
+ * Converte um MonetaryIndexItem em um timestamp ordinal comparável (Year * 12 + Month) para ordenação cronológica
+ */
+export function getIndexItemSortVal(item: MonetaryIndexItem): number {
+  let year = item.ano || 2024;
+  let month = 1;
+
+  if (item.competencia) {
+    const comp = item.competencia.trim();
+    if (comp.includes('/')) {
+      const parts = comp.split('/');
+      month = parseInt(parts[0], 10) || 1;
+      year = parseInt(parts[1], 10) || year;
+    } else if (comp.includes('-')) {
+      const parts = comp.split('-');
+      year = parseInt(parts[0], 10) || year;
+      month = parseInt(parts[1], 10) || 1;
+    }
+  }
+
+  return year * 12 + month;
+}
+
+/**
+ * Ordena a série histórica de forma estritamente cronológica (do mês mais antigo ao mais recente)
+ * e calcula os Fatores Acumulados de 7 casas decimais para TODOS os meses da história com base no Mês Atual final.
+ */
+export function sortAndDeduplicateIndices(indicesList: MonetaryIndexItem[]): MonetaryIndexItem[] {
+  if (!indicesList || indicesList.length === 0) return defaultMonetaryIndices;
+
+  // 1. Mapeia e consolida itens duplicados por competência (mantendo o registro com Número Índice preenchido)
+  const mapComp = new Map<string, MonetaryIndexItem>();
+  indicesList.forEach(item => {
+    const key = (item.competencia || '').trim().toLowerCase();
+    if (!key) return;
+
+    if (!mapComp.has(key)) {
+      mapComp.set(key, item);
+    } else {
+      const existing = mapComp.get(key)!;
+      const updated: MonetaryIndexItem = {
+        ...existing,
+        numeroIndiceInpc: item.numeroIndiceInpc || existing.numeroIndiceInpc,
+        numeroIndiceIpca: item.numeroIndiceIpca || existing.numeroIndiceIpca,
+        indiceInpcMes: item.indiceInpcMes !== undefined && item.indiceInpcMes !== 0 ? item.indiceInpcMes : existing.indiceInpcMes,
+        indiceIpcaMes: item.indiceIpcaMes !== undefined && item.indiceIpcaMes !== 0 ? item.indiceIpcaMes : existing.indiceIpcaMes,
+        variacao3Meses: item.variacao3Meses ?? existing.variacao3Meses,
+        variacao6Meses: item.variacao6Meses ?? existing.variacao6Meses,
+        variacaoNoAno: item.variacaoNoAno ?? existing.variacaoNoAno,
+        variacao12Meses: item.variacao12Meses ?? existing.variacao12Meses,
+        fonte: OFFICIAL_IBGE_SOURCE,
+      };
+      mapComp.set(key, updated);
+    }
+  });
+
+  // 2. Ordena cronologicamente do mês mais antigo para o mês mais recente
+  const sorted = Array.from(mapComp.values()).sort((a, b) => getIndexItemSortVal(a) - getIndexItemSortVal(b));
+
+  // 3. Recalcula a série histórica inteira a partir do mês atual final
+  return recalculateIndicesSeries(sorted);
+}
+
+/**
+ * Parser especialista para a Série Histórica IBGE (Imagem e Tabelas Oficiais do IBGE):
+ * Importa TODOS os anos e meses do mais antigo (ex: 1994) até o mais recente (ex: 2026),
+ * ignorando quebras de página e cabeçalhos repetidos `(continua)` sem interromper a cronologia.
  */
 export function parseIBGESerieHistoricaRows(rawRows: any[][]): MonetaryIndexItem[] {
   if (!rawRows || rawRows.length === 0) return [];
@@ -81,8 +142,8 @@ export function parseIBGESerieHistoricaRows(rawRows: any[][]): MonetaryIndexItem
   let colNoAno = -1;
   let col12Meses = -1;
 
-  // Analisa as primeiras 15 linhas procurando o título e a estrutura do cabeçalho oficial IBGE
-  for (let r = 0; r < Math.min(rawRows.length, 15); r++) {
+  // 1. Escaneia para detectar se é IPCA ou INPC e a ordem das colunas
+  for (let r = 0; r < Math.min(rawRows.length, 25); r++) {
     const row = rawRows[r];
     if (!Array.isArray(row)) continue;
     const rowStr = row.map(c => String(c || '').toLowerCase()).join(' ');
@@ -102,7 +163,6 @@ export function parseIBGESerieHistoricaRows(rawRows: any[][]): MonetaryIndexItem
     });
   }
 
-  // Se o cabeçalho explícito do IBGE não for detectado, tenta mapear por posição padrão do modelo (Cols: 0:Ano, 1:Mês, 2:Número Índice, 3:No Mês, 4:3 Meses, 5:6 Meses, 6:No Ano, 7:12 Meses)
   if (colMes === -1 && colNumeroIndice === -1) {
     colAno = 0;
     colMes = 1;
@@ -118,34 +178,51 @@ export function parseIBGESerieHistoricaRows(rawRows: any[][]): MonetaryIndexItem
   let currentYear = 1994;
 
   rawRows.forEach((row, rowIndex) => {
-    if (!Array.isArray(row) || row.length < 2) return;
+    if (!Array.isArray(row) || row.length === 0) return;
 
-    // Tenta ler o Ano da primeira coluna ou coluna detectada
-    const anoCellStr = String(row[colAno] || '').trim();
-    if (/^\d{4}$/.test(anoCellStr)) {
-      currentYear = parseInt(anoCellStr, 10);
+    // Filtra cabeçalhos repetidos de página IBGE como "(continua)", "SÉRIE HISTÓRICA DO INPC", etc.
+    const fullRowStr = row.map(c => String(c || '').trim()).join(' ').toLowerCase();
+    if (fullRowStr.includes('série histórica') || fullRowStr.includes('continua') || (fullRowStr.includes('ano') && fullRowStr.includes('mês'))) {
+      return;
     }
 
-    // Tenta ler o Mês (JAN, FEV, MAR... ou 01, 02...)
-    const mesCellStr = String(row[colMes] || '').trim().toLowerCase();
+    // Tenta encontrar um ano de 4 dígitos (1970 a 2099) na coluna detectada ou nas primeiras colunas para atualizar o ano corrente
+    if (colAno > -1 && /^(19[7-9]\d|20[0-9]\d)$/.test(String(row[colAno] || '').trim())) {
+      currentYear = parseInt(String(row[colAno]).trim(), 10);
+    } else {
+      for (let c = 0; c < Math.min(row.length, 3); c++) {
+        const cellValStr = String(row[c] || '').trim();
+        if (/^(19[7-9]\d|20[0-9]\d)$/.test(cellValStr)) {
+          currentYear = parseInt(cellValStr, 10);
+          break;
+        }
+      }
+    }
+
+    // Tenta identificar o mês nas colunas
     let monthCode = '';
     let monthName = '';
 
-    if (MONTH_MAP[mesCellStr]) {
-      monthCode = MONTH_MAP[mesCellStr].code;
-      monthName = MONTH_MAP[mesCellStr].name;
-    } else if (/^(0?[1-9]|1[0-2])$/.test(mesCellStr)) {
-      const mNum = parseInt(mesCellStr, 10);
-      monthCode = String(mNum).padStart(2, '0');
-      monthName = Object.values(MONTH_MAP).find(v => v.code === monthCode)?.name || monthCode;
+    for (let c = 0; c < Math.min(row.length, 4); c++) {
+      const cellValStr = String(row[c] || '').trim().toLowerCase();
+      if (MONTH_MAP[cellValStr]) {
+        monthCode = MONTH_MAP[cellValStr].code;
+        monthName = MONTH_MAP[cellValStr].name;
+        break;
+      } else if (/^(0?[1-9]|1[0-2])$/.test(cellValStr) && c === colMes) {
+        const mNum = parseInt(cellValStr, 10);
+        monthCode = String(mNum).padStart(2, '0');
+        monthName = Object.values(MONTH_MAP).find(v => v.code === monthCode)?.name || monthCode;
+        break;
+      }
     }
 
-    // Se não encontrou um mês válido nesta linha, ignora (linha de cabeçalho ou rodapé)
+    // Se não encontrou mês válido nesta linha, ignora a linha de ruído
     if (!monthCode) return;
 
     const competencia = `${monthCode}/${currentYear}`;
-    const numIndiceVal = parseNum(row[colNumeroIndice]);
-    const noMesVal = parseNum(row[colNoMes]);
+    const numIndiceVal = parseNum(row[colNumeroIndice > -1 ? colNumeroIndice : 2]);
+    const noMesVal = parseNum(row[colNoMes > -1 ? colNoMes : 3]);
     const var3m = col3Meses !== -1 ? parseNum(row[col3Meses]) : undefined;
     const var6m = col6Meses !== -1 ? parseNum(row[col6Meses]) : undefined;
     const varAno = colNoAno !== -1 ? parseNum(row[colNoAno]) : undefined;
@@ -170,32 +247,33 @@ export function parseIBGESerieHistoricaRows(rawRows: any[][]): MonetaryIndexItem
     });
   });
 
-  return recalculateIndicesSeries(items);
+  return sortAndDeduplicateIndices(items);
 }
 
 /**
  * Calcula o Fator INPC / IPCA Acumulado (7 casas decimais) com base no "NÚMERO ÍNDICE" do IBGE:
- * Fórmula: (Número Índice do Mês Mais Atual) / (Número Índice do Mês Anterior à Data do Saldo Devedor de Referência)
+ * Fórmula: (Número Índice do Mês Mais Atual da Série) / (Número Índice do Mês Anterior à Data Ref do Saldo Devedor do Contrato)
+ * Funciona de forma automática para QUALQUER data entre 1970 e 2099!
  */
 export function calculateFatorFromNumeroIndice(
   dataReferenciaStr: string | null | undefined,
   tipoIndice: 'INPC' | 'IPCA' = 'INPC',
   indicesList: MonetaryIndexItem[] = []
 ): number {
-  const series = (indicesList && indicesList.length > 0) ? indicesList : defaultMonetaryIndices;
+  const series = sortAndDeduplicateIndices(indicesList && indicesList.length > 0 ? indicesList : defaultMonetaryIndices);
   if (!series || series.length === 0) {
     return tipoIndice === 'IPCA' ? 1.0842105 : 1.0968016;
   }
 
-  // 1. Mês mais atual disponível na tabela
+  // 1. Mês mais atual disponível na série ordenada
   const latestItem = series[series.length - 1];
   const numIndiceAtual = tipoIndice === 'IPCA'
     ? Number(latestItem.numeroIndiceIpca || 0)
     : Number(latestItem.numeroIndiceInpc || 0);
 
-  // 2. Extrai ano e mês da Data do Saldo Devedor de Referência (Saldo devedor após a última parcela paga)
+  // 2. Extrai ano e mês da Data de Referência do Saldo Devedor do Contrato
   let refYear = 2024;
-  let refMonth = 5; // Padrão: maio/2024 se omitido
+  let refMonth = 5;
 
   if (dataReferenciaStr) {
     const cleanStr = dataReferenciaStr.trim();
@@ -225,14 +303,21 @@ export function calculateFatorFromNumeroIndice(
 
   const mmStr = String(prevMonth).padStart(2, '0');
   const yyyyStr = String(prevYear);
-  const searchPattern1 = `${mmStr}/${yyyyStr}`;
-  const searchPattern2 = `${yyyyStr}-${mmStr}`;
 
-  // 4. Localiza a competência do mês anterior na série histórica
-  const foundItem = series.find(item => {
+  // 4. Localiza o mês anterior exato na série histórica do IBGE
+  let foundItem = series.find(item => {
     const comp = (item.competencia || '').toLowerCase();
-    return comp.includes(searchPattern1.toLowerCase()) || comp.includes(searchPattern2.toLowerCase());
+    return comp.includes(`${mmStr}/${yyyyStr}`.toLowerCase()) || comp.includes(`${yyyyStr}-${mmStr}`.toLowerCase());
   });
+
+  // Se a data do contrato for mais antiga do que o início da tabela carregada, seleciona o mês mais antigo disponível
+  if (!foundItem) {
+    const targetSortVal = prevYear * 12 + prevMonth;
+    const earliestSortVal = getIndexItemSortVal(series[0]);
+    if (targetSortVal < earliestSortVal) {
+      foundItem = series[0];
+    }
+  }
 
   let numIndiceMesAnterior = 0;
   if (foundItem) {
@@ -247,7 +332,6 @@ export function calculateFatorFromNumeroIndice(
     return parseFloat(fatorCalculado.toFixed(7));
   }
 
-  // Fallback de segurança se NÚMERO ÍNDICE não estiver disponível na linha encontrada
   if (foundItem) {
     const fatorFallback = tipoIndice === 'IPCA' ? foundItem.fatorIpcaAcumulado7Casas : foundItem.fatorInpcAcumulado7Casas;
     if (fatorFallback && fatorFallback > 0) return fatorFallback;
@@ -262,12 +346,13 @@ export function calculateFatorFromNumeroIndice(
 export function recalculateIndicesSeries(indicesList: MonetaryIndexItem[]): MonetaryIndexItem[] {
   if (!indicesList || indicesList.length === 0) return defaultMonetaryIndices;
 
-  const latestItem = indicesList[indicesList.length - 1];
+  const sortedList = Array.from(indicesList).sort((a, b) => getIndexItemSortVal(a) - getIndexItemSortVal(b));
+  const latestItem = sortedList[sortedList.length - 1];
   const numIndiceAtualInpc = Number(latestItem.numeroIndiceInpc || 0);
   const numIndiceAtualIpca = Number(latestItem.numeroIndiceIpca || 0);
 
-  return indicesList.map((item, idx) => {
-    const prevItem = idx > 0 ? indicesList[idx - 1] : item;
+  return sortedList.map((item, idx) => {
+    const prevItem = idx > 0 ? sortedList[idx - 1] : item;
     
     let fatorInpc = item.fatorInpcAcumulado7Casas || 1.0;
     let fatorIpca = item.fatorIpcaAcumulado7Casas || 1.0;
@@ -291,27 +376,32 @@ export function recalculateIndicesSeries(indicesList: MonetaryIndexItem[]): Mone
       ...item,
       fatorInpcAcumulado7Casas: fatorInpc,
       fatorIpcaAcumulado7Casas: fatorIpca,
-      fonte: item.fonte || OFFICIAL_IBGE_SOURCE,
+      fonte: OFFICIAL_IBGE_SOURCE,
     };
   });
 }
 
 /**
- * Sincroniza e recarrega os fatores de correção de 7 casas em todos os contratos com a fórmula do NÚMERO ÍNDICE IBGE
+ * Sincroniza e recarrega os fatores de correção de 7 casas em TODOS os contratos com a fórmula do NÚMERO ÍNDICE IBGE
+ * Seleciona automaticamente o índice de acordo com a data do saldo devedor de cada contrato!
  */
 export function syncContractsWithNumeroIndice(
   contracts: Contract[],
   indicesList: MonetaryIndexItem[] = []
 ): Contract[] {
-  const series = indicesList.length > 0 ? indicesList : defaultMonetaryIndices;
+  const series = sortAndDeduplicateIndices(indicesList && indicesList.length > 0 ? indicesList : defaultMonetaryIndices);
 
   return contracts.map(c => {
     const tipo = c.tipoIndiceCorrecao || 'INPC';
-    const dataRef = c.dataReferenciaUltimoPagamento || '2024-05-15';
+    // Determina automaticamente a Data de Referência exata da última parcela paga do saldo devedor
+    const dataRef = getDataRefUltimaParcelaModulo6(c);
     const novoFator = calculateFatorFromNumeroIndice(dataRef, tipo, series);
+    const saldoBaseOriginal = getSaldoDevedorModulo6(c);
 
     return {
       ...c,
+      dataReferenciaUltimoPagamento: dataRef,
+      saldoDevedorRefUltimaParcela: c.saldoDevedorRefUltimaParcela || saldoBaseOriginal,
       fatorCorrecao7Casas: novoFator,
     };
   });

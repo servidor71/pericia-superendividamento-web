@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Clipboard, Trash2, RefreshCw, CheckCircle2, Sparkles, Database, FileSpreadsheet } from 'lucide-react';
+import { Clipboard, Trash2, RefreshCw, CheckCircle2, Sparkles, Database, FileSpreadsheet, ArrowUpDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import type { MonetaryIndexItem, Contract } from '../types';
 import { initialMonetaryIndices } from '../mockData';
-import { recalculateIndicesSeries, syncContractsWithNumeroIndice, OFFICIAL_IBGE_SOURCE, parseIBGESerieHistoricaRows } from '../services/monetaryIndices';
+import { syncContractsWithNumeroIndice, OFFICIAL_IBGE_SOURCE, parseIBGESerieHistoricaRows, sortAndDeduplicateIndices } from '../services/monetaryIndices';
 
 interface ModuleImportacaoIndicesProps {
   contracts?: Contract[];
@@ -36,11 +36,17 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
   const isEditing = externalIsEditing !== undefined ? externalIsEditing : true;
   const indices = externalIndices || internalIndices;
 
-  const updateIndices = (newIndices: MonetaryIndexItem[]) => {
+  const updateIndices = (newIndices: MonetaryIndexItem[], syncContracts: boolean = true) => {
+    const sorted = sortAndDeduplicateIndices(newIndices);
     if (onIndicesChange) {
-      onIndicesChange(newIndices);
+      onIndicesChange(sorted);
     } else {
-      setInternalIndices(newIndices);
+      setInternalIndices(sorted);
+    }
+
+    if (syncContracts && contracts.length > 0 && onContractsChange) {
+      const updatedContracts = syncContractsWithNumeroIndice(contracts, sorted);
+      onContractsChange(updatedContracts);
     }
   };
 
@@ -81,29 +87,29 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
     }
   };
 
-  // Recálculo automático dos Fatores Acumulados de 7 casas decimais via NÚMERO ÍNDICE (Mês Atual / Mês Anterior)
+  // Recálculo automático dos Fatores Acumulados de 7 casas decimais via NÚMERO ÍNDICE
   const handleRecalculateAccumulatedFactors = () => {
-    const recalculated = recalculateIndicesSeries(indices);
-    updateIndices(recalculated);
-    setSyncSuccessMessage('Fatores acumulados (7 casas) recalculados pela divisão do NÚMERO ÍNDICE (Mês Atual / Mês Anterior Data Ref)!');
+    const sorted = sortAndDeduplicateIndices(indices);
+    updateIndices(sorted, true);
+    setSyncSuccessMessage('Série histórica organizada e Fatores acumulados (7 casas) recalculados pela divisão do NÚMERO ÍNDICE!');
     setTimeout(() => setSyncSuccessMessage(null), 5000);
   };
 
-  // Sincronização direta dos Fatores com os Contratos Bancários da Perícia via NÚMERO ÍNDICE
+  // Sincronização direta dos Fatores com os Contratos Bancários da Perícia via NÚMERO ÍNDICE conforme a data do saldo devedor
   const handleSyncFactorsWithContracts = () => {
     if (!contracts.length || !onContractsChange) {
-      setSyncSuccessMessage('Tabela atualizada! (Nenhum contrato ativo cadastrado para sincronizar).');
+      setSyncSuccessMessage('Série organizada! (Nenhum contrato ativo cadastrado para sincronizar).');
       setTimeout(() => setSyncSuccessMessage(null), 4000);
       return;
     }
 
     const updatedContracts = syncContractsWithNumeroIndice(contracts, indices);
     onContractsChange(updatedContracts);
-    setSyncSuccessMessage(`Sincronização Concluída! Fatores INPC/IPCA recalculados pela fórmula NÚMERO ÍNDICE IBGE em todos os ${contracts.length} contratos!`);
+    setSyncSuccessMessage(`Sincronização Automática Concluída! Fatores INPC/IPCA vinculados por data de saldo devedor em todos os ${contracts.length} contratos!`);
     setTimeout(() => setSyncSuccessMessage(null), 5000);
   };
 
-  // Processa Upload de Arquivo CSV / Excel (.xls, .xlsx, .csv, .txt) no modelo de Série Histórica IBGE
+  // Processa Upload de Arquivo CSV / Excel (.xls, .xlsx, .csv, .txt) importando TODOS os anos (do mais antigo ao mais recente)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -114,25 +120,27 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
         const buffer = event.target?.result as ArrayBuffer;
         if (!buffer) return;
 
-        // Suporta .xls (BIFF8/HTML), .xlsx, .csv e .txt via SheetJS (XLSX)
         const workbook = XLSX.read(buffer, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-
-        // Converte planilha em matriz 2D de linhas
         const rawRows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, raw: false });
 
-        // Tenta processar com o parser oficial do modelo Série Histórica IBGE (ANO, MÊS, NÚMERO ÍNDICE, VARIAÇÃO %)
+        // Tenta processar com o parser especialista da Série Histórica IBGE (1979/1994 em diante)
         const parsedIbgeItems = parseIBGESerieHistoricaRows(rawRows);
 
         if (parsedIbgeItems.length > 0) {
-          updateIndices([...indices, ...parsedIbgeItems]);
-          setSyncSuccessMessage(`${parsedIbgeItems.length} registros da Série Histórica IBGE importados e recalculados com sucesso do arquivo ${file.name}!`);
-          setTimeout(() => setSyncSuccessMessage(null), 5000);
+          const sorted = sortAndDeduplicateIndices([...indices, ...parsedIbgeItems]);
+          updateIndices(sorted, true);
+          
+          const pMin = sorted[0]?.competencia || 'antigo';
+          const pMax = sorted[sorted.length - 1]?.competencia || 'recente';
+
+          setSyncSuccessMessage(`${parsedIbgeItems.length} meses da Série Histórica IBGE (período ${pMin} a ${pMax}) importados e aplicados automaticamente aos contratos!`);
+          setTimeout(() => setSyncSuccessMessage(null), 6000);
           return;
         }
 
-        // Fallback para planilhas em formato de tabela simples (Competência, INPC, IPCA)
+        // Fallback para planilhas simples
         const parsedItems: MonetaryIndexItem[] = [];
         const dateMonthRegex = /\b(?:(0?[1-9]|1[0-2])[\/\.-](20\d{2}|\d{2})|(20\d{2})[\/\.-](0?[1-9]|1[0-2])|(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[\/\.-]?(20\d{2}|\d{2}))\b/i;
 
@@ -158,7 +166,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
           if (slashMatch) {
             const m = slashMatch[1].padStart(2, '0');
             let y = slashMatch[2];
-            if (y.length === 2) y = '20' + y;
+            if (y.length === 2) y = (parseInt(y, 10) > 50 ? '19' : '20') + y;
             formattedComp = `${m}/${y}`;
           }
 
@@ -173,7 +181,6 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
           let numIndiceInpc: number | undefined = undefined;
 
           if (numCol1 > 50) {
-            // Se for um NÚMERO ÍNDICE (ex: 6816.54 ou 141.32)
             numIndiceInpc = numCol1;
             inpcMes = 0;
           }
@@ -191,9 +198,9 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
         });
 
         if (parsedItems.length > 0) {
-          const recalculated = recalculateIndicesSeries([...indices, ...parsedItems]);
-          updateIndices(recalculated);
-          setSyncSuccessMessage(`${parsedItems.length} meses de índices monetários importados com sucesso do arquivo ${file.name}!`);
+          const sorted = sortAndDeduplicateIndices([...indices, ...parsedItems]);
+          updateIndices(sorted, true);
+          setSyncSuccessMessage(`${parsedItems.length} meses de índices monetários importados e sincronizados com sucesso!`);
           setTimeout(() => setSyncSuccessMessage(null), 5000);
         } else {
           alert(`Nenhuma competência/data válida foi encontrada no arquivo ${file.name}. Certifique-se de que a planilha segue o modelo da Série Histórica IBGE (ANO, MÊS, NÚMERO ÍNDICE, VARIAÇÕES).`);
@@ -214,20 +221,20 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
     const lines = pasteText.split(/\r?\n/).filter(line => line.trim().length > 0);
     const rawMatrix = lines.map(line => line.split(/\t/).map(p => p.trim()));
 
-    // Tenta primeiro via parser oficial IBGE
+    // Tenta primeiro via parser especialista IBGE
     const ibgeParsed = parseIBGESerieHistoricaRows(rawMatrix);
     if (ibgeParsed.length > 0) {
-      updateIndices([...indices, ...ibgeParsed]);
+      const sorted = sortAndDeduplicateIndices([...indices, ...ibgeParsed]);
+      updateIndices(sorted, true);
       setShowPasteModal(false);
       setPasteText('');
-      setSyncSuccessMessage(`${ibgeParsed.length} registros da Série Histórica IBGE importados via colagem com sucesso!`);
+      setSyncSuccessMessage(`${ibgeParsed.length} registros da Série Histórica IBGE importados e aplicados automaticamente aos contratos!`);
       setTimeout(() => setSyncSuccessMessage(null), 5000);
       return;
     }
 
-    // Fallback: colagem simples [Competência / Mês] [Número Índice / INPC %] [IPCA %]
+    // Fallback simples
     const parsedItems: MonetaryIndexItem[] = [];
-
     rawMatrix.forEach((parts, index) => {
       if (parts.length >= 2) {
         const comp = parts[0];
@@ -256,11 +263,11 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
     });
 
     if (parsedItems.length > 0) {
-      const recalculated = recalculateIndicesSeries([...indices, ...parsedItems]);
-      updateIndices(recalculated);
+      const sorted = sortAndDeduplicateIndices([...indices, ...parsedItems]);
+      updateIndices(sorted, true);
       setShowPasteModal(false);
       setPasteText('');
-      setSyncSuccessMessage(`${parsedItems.length} meses importados via colagem com sucesso!`);
+      setSyncSuccessMessage(`${parsedItems.length} meses importados via colagem e sincronizados com sucesso!`);
       setTimeout(() => setSyncSuccessMessage(null), 5000);
     } else {
       alert('Formato de dados colados não reconhecido. Copie as colunas da Série Histórica IBGE (ANO, MÊS, NÚMERO ÍNDICE, VARIAÇÃO %) direto da planilha.');
@@ -274,10 +281,13 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
         openPasteModal: () => setShowPasteModal(true),
         handleAddRow,
         handleResetIndices,
-        handleClearIndices: () => updateIndices([]),
+        handleClearIndices: () => updateIndices([], true),
       });
     }
   }, [indices, onRegisterActions]);
+
+  const minCompetencia = indices[0]?.competencia || '01/1994';
+  const maxCompetencia = indices[indices.length - 1]?.competencia || '03/2026';
 
   return (
     <div className="space-y-6 pb-24 w-full font-sans">
@@ -297,10 +307,10 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
         <div className="flex items-center gap-2 overflow-hidden shrink min-w-0">
           <div className="flex items-center space-x-1.5 text-blue-900 font-black text-xs uppercase tracking-wider shrink-0">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>FÓRMULA NÚMERO ÍNDICE — SÉRIE HISTÓRICA IBGE:</span>
+            <span>FÓRMULA NÚMERO ÍNDICE — SÉRIE HISTÓRICA IBGE COMPLETA:</span>
           </div>
           <p className="text-xs text-slate-600 font-medium whitespace-nowrap truncate">
-            Cálculo pericial oficial: Fator = (Número Índice Mês Atual) / (Número Índice Mês Anterior Data Ref).
+            Série histórica completa ({minCompetencia} até {maxCompetencia}) • Fator = (Número Índice Mês Atual) / (Número Índice Mês Anterior Data Ref).
           </p>
         </div>
 
@@ -310,7 +320,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
             className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 text-blue-900 font-extrabold text-[11px] rounded-lg border border-slate-300 shadow-2xs transition-all cursor-pointer"
           >
             <RefreshCw className="w-3 h-3 text-blue-600" />
-            <span>Recalcular Fatores Acumulados</span>
+            <span>Ordenar & Recalcular Fatores</span>
           </button>
 
           <button
@@ -318,7 +328,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
             className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] rounded-lg border border-blue-500 shadow-2xs transition-all cursor-pointer"
           >
             <Database className="w-3 h-3 text-white" />
-            <span>✨ Sincronizar Fatores nos Contratos</span>
+            <span>✨ Aplicar Fatores por Data de Saldo nos Contratos</span>
           </button>
         </div>
       </div>
@@ -329,20 +339,21 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
           <div className="flex items-center space-x-2">
             <FileSpreadsheet className="w-4 h-4 text-blue-700" />
             <span className="text-xs font-black uppercase tracking-wide text-blue-900">
-              SÉRIE HISTÓRICA DO INPC E IPCA ({indices.length} MESES CADASTRADOS)
+              SÉRIE HISTÓRICA DO INPC E IPCA ({indices.length} MESES: DE {minCompetencia} A {maxCompetencia})
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded text-[11px] font-black border border-blue-300">
+            <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded text-[11px] font-black border border-blue-300 flex items-center gap-1">
+              <ArrowUpDown className="w-3 h-3 text-blue-700" />
               {OFFICIAL_IBGE_SOURCE}
             </span>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[600px]">
           <table className="w-full text-left border-collapse text-xs min-w-[980px]">
-            <thead>
-              <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] border-b border-slate-300">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] border-b border-slate-300 shadow-2xs">
                 <th className="py-3 px-2 text-center border-r border-slate-200">Ano</th>
                 <th className="py-3 px-2 text-center border-r border-slate-200">Mês</th>
                 <th className="py-3 px-3 text-center border-r border-slate-200">Competência</th>
@@ -362,7 +373,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                 <tr>
                   <td colSpan={11} className="py-12 text-center text-slate-500 font-medium">
                     <p className="text-sm font-bold text-slate-700 mb-1">Nenhum índice monetário cadastrado nesta série.</p>
-                    <p className="text-xs text-slate-500">Utilize o botão de importação acima para carregar o arquivo Excel no modelo da Série Histórica IBGE.</p>
+                    <p className="text-xs text-slate-500">Utilize o botão de importação acima para carregar a Série Histórica Completa do IBGE (1979/1994 até 2026).</p>
                   </td>
                 </tr>
               ) : (
@@ -524,7 +535,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
 
             <tfoot>
               <tr className="bg-slate-100 text-slate-900 font-black uppercase text-xs border-t-2 border-slate-300">
-                <td className="py-3 px-4 text-center font-black" colSpan={3}>TOTAL: {indices.length} MESES</td>
+                <td className="py-3 px-4 text-center font-black" colSpan={3}>TOTAL: {indices.length} MESES CADASTRADOS</td>
                 <td className="py-3 px-4 text-center font-black text-blue-900 font-mono" colSpan={3}>
                   Último Fator INPC: {indices[indices.length - 1]?.fatorInpcAcumulado7Casas.toFixed(7) || '1.0000000'}
                 </td>
@@ -558,11 +569,11 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
             </div>
 
             <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              Copie as colunas da tabela oficial do IBGE no Excel e cole abaixo. Suporta o modelo:<br />
+              Copie as colunas da tabela oficial do IBGE no Excel (de qualquer ano desde 1979/1994 até o presente) e cole abaixo:<br />
               <code className="bg-blue-50 px-1.5 py-0.5 rounded font-mono text-[11px] text-blue-900 border border-blue-200 block mt-1">
                 [ANO] [MÊS (ex: JAN)] [NÚMERO ÍNDICE] [VARIAÇÃO NO MÊS %] [VARIAÇÃO 12m %]
               </code>
-              <span className="text-[11px] text-slate-500 block mt-1">Fonte configurada automaticamente para: <strong>Fonte: Série Histórica - IBGE</strong></span>
+              <span className="text-[11px] text-slate-500 block mt-1">Os índices serão ordenados cronologicamente e sincronizados automaticamente em todos os contratos por data de saldo devedor.</span>
             </p>
 
             <textarea
