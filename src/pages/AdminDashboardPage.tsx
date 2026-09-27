@@ -7,6 +7,7 @@ import {
   Cpu,
   Award
 } from 'lucide-react';
+import { formatCurrency } from '../services/calculations';
 
 interface AdminDashboardPageProps {
   onNavigate: (route: string) => void;
@@ -269,7 +270,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
                     </td>
 
                     <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
-                      R$ {sub.mrr.toFixed(2)}
+                      {formatCurrency(sub.mrr)}
                     </td>
 
                     <td className="py-3.5 px-4 text-center font-mono font-bold text-amber-600">

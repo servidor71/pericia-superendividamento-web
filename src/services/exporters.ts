@@ -295,7 +295,7 @@ function buildStyledSheet(
         if (cell.z === NUM_FMTS.CURRENCY && typeof cell.v === 'number') {
           valStr = `R$ ${cell.v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         } else if (cell.z === NUM_FMTS.PERCENT && typeof cell.v === 'number') {
-          valStr = `${(cell.v * 100).toFixed(2)}%`;
+          valStr = `${(cell.v * 100).toFixed(2).replace('.', ',')}%`;
         }
         const len = valStr.length + 5;
         if (len > maxLen) maxLen = len;

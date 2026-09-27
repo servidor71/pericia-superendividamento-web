@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingDown, Trash2 } from 'lucide-react';
 import type { Contract, IncomeData, ExpenseData } from '../types';
-import { formatCurrency } from '../services/calculations';
+import { formatCurrency, formatPercent } from '../services/calculations';
 
 interface ModuleCenarioRevisionalBacenProps {
   income: IncomeData;
@@ -267,7 +267,7 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
                         <span className="text-[10px] text-slate-500 font-normal">%</span>
                       </div>
                     ) : (
-                      <span className="font-mono text-slate-800">{Number(row.taxaMediaBacenMes || 0).toFixed(2)}% a.m.</span>
+                      <span className="font-mono text-slate-800">{formatPercent(row.taxaMediaBacenMes || 0)} a.m.</span>
                     )}
                   </td>
 
