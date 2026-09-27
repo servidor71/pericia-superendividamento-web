@@ -551,6 +551,66 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
                     </td>
                   </tr>
 
+                  <tr className="bg-white hover:bg-slate-50">
+                    <td className="py-2.5 px-4 font-normal text-slate-900">Saúde & Medicamentos</td>
+                    <td className="py-2.5 px-4 text-right">
+                      <CurrencyInput
+                        value={expenses.saudeMedicamentos}
+                        onChange={(v) => handleExpenseFieldChange('saudeMedicamentos', v)}
+                        className="w-36 text-right font-normal"
+                      />
+                    </td>
+                    <td className="py-2.5 px-4 font-normal text-slate-600">
+                      <input
+                        type="text"
+                        value={expenses.fonteSaude ?? 'Comprovante de despesas médicas e farmácia'}
+                        onChange={(e) => handleExpenseFieldChange('fonteSaude', e.target.value)}
+                        placeholder="Fonte / Comprovação de saúde..."
+                        className="w-full px-2 py-1 border border-slate-300 rounded text-xs font-normal text-slate-700 bg-white"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr className="bg-white hover:bg-slate-50">
+                    <td className="py-2.5 px-4 font-normal text-slate-900">Transporte & Locomoção</td>
+                    <td className="py-2.5 px-4 text-right">
+                      <CurrencyInput
+                        value={expenses.transporte}
+                        onChange={(v) => handleExpenseFieldChange('transporte', v)}
+                        className="w-36 text-right font-normal"
+                      />
+                    </td>
+                    <td className="py-2.5 px-4 font-normal text-slate-600">
+                      <input
+                        type="text"
+                        value={expenses.fonteTransporte ?? 'Comprovantes de combustível e transporte'}
+                        onChange={(e) => handleExpenseFieldChange('fonteTransporte', e.target.value)}
+                        placeholder="Fonte / Comprovação de transporte..."
+                        className="w-full px-2 py-1 border border-slate-300 rounded text-xs font-normal text-slate-700 bg-white"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr className="bg-white hover:bg-slate-50">
+                    <td className="py-2.5 px-4 font-normal text-slate-900">Outras Despesas Essenciais (Luz / Água / Gás / Telefone)</td>
+                    <td className="py-2.5 px-4 text-right">
+                      <CurrencyInput
+                        value={expenses.outrasDespesasEssenciais}
+                        onChange={(v) => handleExpenseFieldChange('outrasDespesasEssenciais', v)}
+                        className="w-36 text-right font-normal"
+                      />
+                    </td>
+                    <td className="py-2.5 px-4 font-normal text-slate-600">
+                      <input
+                        type="text"
+                        value={expenses.fonteOutrasDespesas ?? 'Comprovantes de utilidades domésticas'}
+                        onChange={(e) => handleExpenseFieldChange('fonteOutrasDespesas', e.target.value)}
+                        placeholder="Fonte / Comprovação de outras despesas..."
+                        className="w-full px-2 py-1 border border-slate-300 rounded text-xs font-normal text-slate-700 bg-white"
+                      />
+                    </td>
+                  </tr>
+
                   {(expenses.outrasDespesasIndividuais || []).map((exp) => (
                     <tr key={exp.id} className="bg-white hover:bg-slate-50">
                       <td className="py-2.5 px-4 font-normal text-slate-900 flex items-center gap-2">
@@ -839,6 +899,13 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
                       <td className="py-2.5 px-4 font-normal text-slate-900">Transporte & Locomoção</td>
                       <td className="py-2.5 px-4 text-right font-normal text-slate-900">{formatCurrency(expenses.transporte)}</td>
                       <td className="py-2.5 px-4 font-normal text-slate-600">{expenses.fonteTransporte || 'Comprovante de transporte'}</td>
+                    </tr>
+                  )}
+                  {expenses.outrasDespesasEssenciais > 0 && (
+                    <tr className="bg-white">
+                      <td className="py-2.5 px-4 font-normal text-slate-900">Outras Despesas Essenciais</td>
+                      <td className="py-2.5 px-4 text-right font-normal text-slate-900">{formatCurrency(expenses.outrasDespesasEssenciais)}</td>
+                      <td className="py-2.5 px-4 font-normal text-slate-600">{expenses.fonteOutrasDespesas || 'Comprovantes de despesas essenciais'}</td>
                     </tr>
                   )}
                   {(expenses.outrasDespesasIndividuais || []).map(exp => (

@@ -34,20 +34,21 @@ export function calculateRLA(income: IncomeData): number {
 }
 
 export function calculateTotalExpenses(expenses: ExpenseData): number {
+  if (!expenses) return 0;
   const padrao = 
-    expenses.moradia +
-    expenses.alimentacao +
-    expenses.saudeMedicamentos +
-    expenses.transporte +
-    expenses.educacaoDependentes +
-    expenses.outrasDespesasEssenciais;
+    (Number(expenses.moradia) || 0) +
+    (Number(expenses.alimentacao) || 0) +
+    (Number(expenses.saudeMedicamentos) || 0) +
+    (Number(expenses.transporte) || 0) +
+    (Number(expenses.educacaoDependentes) || 0) +
+    (Number(expenses.outrasDespesasEssenciais) || 0);
 
   const outrasDespesasTotal = (expenses.outrasDespesasIndividuais || []).reduce(
-    (acc, d) => acc + (d.valor || 0), 
+    (acc, d) => acc + (Number(d.valor) || 0), 
     0
   );
 
-  return padrao + outrasDespesasTotal;
+  return Math.round((padrao + outrasDespesasTotal) * 100) / 100;
 }
 
 /**
