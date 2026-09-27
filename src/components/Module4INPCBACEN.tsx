@@ -330,6 +330,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">Valor Liberado Corrigido (R$)</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">Taxa Contratada (% a.m.)</th>
                     <th className="py-2.5 px-3 border-r border-slate-200 text-center">Taxa BACEN (% a.m.)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">Diferença Taxa (% a.m.)</th>
                     <th className="py-2.5 px-3 text-center">Status BACEN</th>
                   </tr>
                 </thead>
@@ -340,7 +341,10 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                     const vlrLiberado = c.valorLiberadoContrato || 0;
                     const fator = c.fatorCorrecao7Casas || 1.0;
                     const vlrCorrigido = vlrLiberado * fator;
-                    const bacenStatus = getBacenStatus(c.taxaJurosMes, c.taxaMediaBacenMes);
+                    const taxaContratada = Number(c.taxaJurosMes) || 0;
+                    const taxaBacen = Number(c.taxaMediaBacenMes) || 0;
+                    const diffTaxa = taxaContratada - taxaBacen;
+                    const bacenStatus = getBacenStatus(taxaContratada, taxaBacen);
 
                     return (
                       <tr key={c.id} className="hover:bg-slate-50 transition-colors text-slate-800 font-normal">
@@ -406,6 +410,11 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                           />
                           <span className="text-[10px] text-slate-500 block font-normal">% a.m.</span>
                         </td>
+                        <td className="py-2.5 px-3 text-right border-r border-slate-200 font-mono font-normal">
+                          <span className={`text-[11px] ${diffTaxa > 0 ? 'text-red-700 font-bold' : diffTaxa < 0 ? 'text-emerald-700 font-bold' : 'text-slate-700'}`}>
+                            {diffTaxa > 0 ? `+${diffTaxa.toFixed(2)}%` : `${diffTaxa.toFixed(2)}%`}
+                          </span>
+                        </td>
                         <td className="py-2.5 px-3 text-center">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-normal border ${bacenStatus.badgeClass}`}>
                             {bacenStatus.label}
@@ -423,7 +432,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                     <td className="py-3 px-4 text-right font-black text-slate-900">{formatCurrency(totalValorLiberadoOriginal)}</td>
                     <td className="py-3 px-4 text-center font-black">-- Fatores Acumulados --</td>
                     <td className="py-3 px-4 text-right font-black text-blue-900 text-sm">{formatCurrency(totalValorLiberadoCorrigido)}</td>
-                    <td colSpan={3}></td>
+                    <td colSpan={4}></td>
                   </tr>
                 </tfoot>
               </table>

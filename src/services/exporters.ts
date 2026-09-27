@@ -1161,7 +1161,7 @@ export function exportToExcel(
           { value: (c.taxaJurosMes || 0) / 100, formula: `='5. Contratos Bancários'!N${r}`, styleType: 'percent' as const },
           { value: (c.taxaMediaBacenMes || c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
           { value: dif / 100, formula: `=D${r}-E${r}`, styleType: 'percent' as const },
-          { value: b.label, formula: `=IF(F${r}>0.005, "TAXA ABUSIVA", IF(F${r}>0, "NO LIMITE DA MÉDIA", "ABAIXO DA MÉDIA"))`, align: 'center' as const, styleType: badgeType }
+          { value: b.label, formula: `=IF(F${r}>0, "ACIMA DA MÉDIA", IF(F${r}<0, "ABAIXO DA MÉDIA", "NA MÉDIA"))`, align: 'center' as const, styleType: badgeType }
         ]
       };
     })

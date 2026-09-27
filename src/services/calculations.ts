@@ -520,15 +520,17 @@ export function getBacenStatus(taxaContratadaAm: number, taxaBacenAm: number): {
   label: string;
   badgeClass: string;
 } {
-  const diff = taxaContratadaAm - taxaBacenAm;
+  const tContratada = Number(taxaContratadaAm) || 0;
+  const tBacen = Number(taxaBacenAm) || 0;
+  const diff = Math.round((tContratada - tBacen) * 10000) / 10000;
 
-  if (diff > 1.0 || (taxaBacenAm > 0 && taxaContratadaAm / taxaBacenAm >= 1.5)) {
+  if (diff > 0) {
     return {
       status: 'ABUSIVA',
-      label: 'ABUSIVA / ACIMA DA MÉDIA',
+      label: 'ACIMA DA MÉDIA',
       badgeClass: 'bg-red-100 text-red-800 border-red-300 font-semibold'
     };
-  } else if (diff < -0.2) {
+  } else if (diff < 0) {
     return {
       status: 'ABAIXO',
       label: 'ABAIXO DA MÉDIA',
@@ -537,7 +539,7 @@ export function getBacenStatus(taxaContratadaAm: number, taxaBacenAm: number): {
   } else {
     return {
       status: 'NA_MEDIA',
-      label: 'NA MÉDIA DE MERCADO',
+      label: 'NA MÉDIA',
       badgeClass: 'bg-blue-100 text-blue-800 border-blue-300 font-semibold'
     };
   }
