@@ -184,13 +184,19 @@ export interface QuesitoPericial {
 export interface MonetaryIndexItem {
   id: string;
   competencia: string; // Ex: "01/2025" ou "2025-01"
+  ano?: number; // Ex: 2025
+  mes?: string; // Ex: "JAN" ou "01"
   numeroIndiceInpc?: number; // Ex: 6816.54 (Número Índice INPC IBGE)
-  indiceInpcMes: number; // Ex: 0.57 (% a.m.)
+  indiceInpcMes: number; // Ex: 0.57 (% a.m. - Variação no Mês)
   fatorInpcAcumulado7Casas: number; // Ex: 1.0160724
   numeroIndiceIpca?: number; // Ex: 7108.74 (Número Índice IPCA IBGE)
-  indiceIpcaMes: number; // Ex: 0.42 (% a.m.)
+  indiceIpcaMes: number; // Ex: 0.42 (% a.m. - Variação no Mês)
   fatorIpcaAcumulado7Casas: number; // Ex: 1.0210543
-  fonte: string; // Ex: "IBGE / Tabela Bacen 433"
+  variacao3Meses?: number; // Variação % 3 Meses (IBGE)
+  variacao6Meses?: number; // Variação % 6 Meses (IBGE)
+  variacaoNoAno?: number; // Variação % No Ano (IBGE)
+  variacao12Meses?: number; // Variação % 12 Meses (IBGE)
+  fonte: string; // "Fonte: Série Histórica - IBGE"
 }
 
 export type SubscriptionPlanType = 'trial' | 'individual' | 'escritorio' | 'master';
