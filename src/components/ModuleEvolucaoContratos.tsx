@@ -108,9 +108,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900">Prestações Repactuadas</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Total Pagas + Repactuadas</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Total Pago Acima do Contratado</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center">% Acima do Contratado</th>
-                <th className="py-2.5 px-3 border-r border-slate-200 text-center">TIR % a.m</th>
-                <th className="py-2.5 px-3 text-center">TIR % a.a</th>
+                <th className="py-2.5 px-3 text-center">% Acima do Contratado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white font-normal">
@@ -130,9 +128,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900 font-mono">{formatCurrency(row.prestacaoRepactuada * row.qtdRepactuadas)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900">{formatCurrency(row.totalPagoJaPagasERepactuadas)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-emerald-800">{formatCurrency(row.totalPagoAcimaDoValorLiberado)}</td>
-                  <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{formatPercent(row.percentualAcimaContratado, 2)}</td>
-                  <td className="py-2.5 px-3 border-r border-slate-200 text-center font-mono font-normal text-blue-900">{formatPercent(row.tirAmPercent, 2)}</td>
-                  <td className="py-2.5 px-3 text-center font-mono font-normal text-blue-950 font-bold">{formatPercent(row.tirAaPercent, 2)}</td>
+                  <td className="py-2.5 px-3 text-center font-normal text-slate-900">{formatPercent(row.percentualAcimaContratado, 2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -149,9 +145,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900 font-mono">{formatCurrency(totais.totalRepactuado60m)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900">{formatCurrency(totais.totalPagoJaPagasERepactuadas)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-emerald-800">{formatCurrency(totais.totalPagoAcimaDoValorLiberado)}</td>
-                <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{formatPercent(totais.percentualAcimaDoValorContratado, 2)}</td>
-                <td className="py-2.5 px-3 border-r border-slate-200 text-center font-mono font-black text-blue-900">-</td>
-                <td className="py-2.5 px-3 text-center font-mono font-black text-blue-950">-</td>
+                <td className="py-2.5 px-3 text-center font-black">{formatPercent(totais.percentualAcimaDoValorContratado, 2)}</td>
               </tr>
             </tfoot>
           </table>
