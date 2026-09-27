@@ -24,6 +24,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
     valorLiberado: evolution.reduce((acc, row) => acc + row.valorLiberado, 0),
     valorLiberadoCorrigido: evolution.reduce((acc, row) => acc + row.valorLiberadoCorrigido, 0),
     totalPrestacoesJaPagas: evolution.reduce((acc, row) => acc + row.totalPrestacoesJaPagas, 0),
+    totalRepactuado60m: evolution.reduce((acc, row) => acc + (row.totalRepactuado60m || (row.prestacaoRepactuada * row.qtdRepactuadas) || 0), 0),
     totalPagoJaPagasERepactuadas: evolution.reduce((acc, row) => acc + row.totalPagoJaPagasERepactuadas, 0),
     totalPagoAcimaDoValorLiberado: evolution.reduce((acc, row) => acc + row.totalPagoAcimaDoValorLiberado, 0),
     percentualAcimaDoValorContratado: evolution.length > 0 ? (evolution.reduce((acc, row) => acc + row.totalPagoAcimaDoValorLiberado, 0) / (evolution.reduce((acc, row) => acc + row.valorLiberado, 0) || 1)) * 100 : 0,
@@ -92,7 +93,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
       {/* Main Evolution Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden w-full">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs min-w-[1400px] bg-transparent">
+          <table className="w-full text-left border-collapse text-xs min-w-[1500px] bg-transparent">
             <thead>
               <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] border-b border-slate-300">
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Qtda Prestações Já Pagas</th>
@@ -104,6 +105,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center whitespace-nowrap min-w-[170px]">Fator INPC / IPCA</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Valor Contratado Corrigido</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Prestações Já Pagas</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900">Prestações Repactuadas</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Total Pagas + Repactuadas</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Total Pago Acima do Contratado</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">% Acima do Contratado</th>
@@ -125,6 +127,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                   </td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{formatCurrency(row.valorLiberadoCorrigido)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-800">{formatCurrency(row.totalPrestacoesJaPagas)}</td>
+                  <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900 font-mono">{formatCurrency(row.prestacaoRepactuada * row.qtdRepactuadas)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900">{formatCurrency(row.totalPagoJaPagasERepactuadas)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-emerald-800">{formatCurrency(row.totalPagoAcimaDoValorLiberado)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{formatPercent(row.percentualAcimaContratado, 2)}</td>
@@ -143,6 +146,7 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">-</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{formatCurrency(totais.valorLiberadoCorrigido)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{formatCurrency(totais.totalPrestacoesJaPagas)}</td>
+                <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900 font-mono">{formatCurrency(totais.totalRepactuado60m)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900">{formatCurrency(totais.totalPagoJaPagasERepactuadas)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-emerald-800">{formatCurrency(totais.totalPagoAcimaDoValorLiberado)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{formatPercent(totais.percentualAcimaDoValorContratado, 2)}</td>
