@@ -346,7 +346,7 @@ export function exportToExcel(
   const totalRow6 = 5 + N_contracts;
   const totalRow8 = 5 + N_contracts;
   const totalRow10 = 5 + N_contracts;
-  const totalRow17 = 5 + N_contracts;
+  const totalRow16 = 5 + N_contracts;
 
   // =============================================================
   // ABA 0: METODOLOGIA & MEMÓRIA (NOVA ABA MÁSTER)
@@ -487,16 +487,16 @@ export function exportToExcel(
       type: 'data',
       cells: [
         { value: 'Parcela Mensal Repactuada Unificada (PMT 60x)' },
-        { value: '17. Plano Rateio 60X', align: 'center' },
-        { value: summary.capacidadeMensalPlano, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' }
+        { value: '16. Plano Rateio 60X', align: 'center' },
+        { value: summary.capacidadeMensalPlano, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' }
       ]
     },
     {
       type: 'data',
       cells: [
         { value: 'Total a Ser Quitado no Plano 60 Meses' },
-        { value: '17. Plano Rateio 60X', align: 'center' },
-        { value: summary.capacidadeMensalPlano * 60, formula: `='17. Plano Rateio 60X'!F${totalRow17}`, styleType: 'currency' }
+        { value: '16. Plano Rateio 60X', align: 'center' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `='16. Plano Rateio 60X'!F${totalRow16}`, styleType: 'currency' }
       ]
     }
   ];
@@ -776,7 +776,7 @@ export function exportToExcel(
         { value: 'Resultado Apurado', align: 'center' }
       ]
     },
-    { type: 'data', cells: [{ value: 'Prestação Mensal Repactuada (PMT 60x)' }, { value: 'Art. 104-B §4º CDC', align: 'center' }, { value: summary.capacidadeMensalPlano, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: 'Prestação Mensal Repactuada (PMT 60x)' }, { value: 'Art. 104-B §4º CDC', align: 'center' }, { value: summary.capacidadeMensalPlano, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' }] },
     { type: 'data', cells: [{ value: '% de Comprometimento Pós-Plano na RLA' }, { value: 'Limite 30% RLA', align: 'center' }, { value: (summary.rla > 0 ? summary.capacidadeMensalPlano / summary.rla : 0), formula: `=C${posPlanoPmtRow4}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }] }
   ];
   const sheet4 = buildStyledSheet('4. Comprometimento Renda', 'MÓDULO 4 — COMPROMETIMENTO DA RENDA MENSAL (ANTES X APÓS O PLANO)', aba4Rows, [30, 20, 25, 22, 22]);
@@ -1202,10 +1202,10 @@ export function exportToExcel(
           { value: e.qtdPagar, align: 'center' as const },
           { value: e.qtdRepactuadas || 60, align: 'center' as const },
           { value: e.prestacaoContratada, formula: `='5. Contratos Bancários'!M${r}`, styleType: 'currency' as const },
-          { value: e.prestacaoRepactuada, formula: `='17. Plano Rateio 60X'!E${r}`, styleType: 'currency' as const },
+          { value: e.prestacaoRepactuada, formula: `='16. Plano Rateio 60X'!E${r}`, styleType: 'currency' as const },
           { value: e.valorLiberado, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
           { value: e.totalPrestacoesJaPagas, formula: `='13. Total Pago Contrato'!E${r}`, styleType: 'currency' as const },
-          { value: e.totalRepactuado60m, formula: `='17. Plano Rateio 60X'!F${r}`, styleType: 'currency' as const },
+          { value: e.totalRepactuado60m, formula: `='16. Plano Rateio 60X'!F${r}`, styleType: 'currency' as const },
           { value: e.totalPagoJaPagasERepactuadas, formula: `=H${r}+I${r}`, styleType: 'currency' as const },
           { value: e.totalPagoAcimaDoValorLiberado, formula: `=J${r}-G${r}`, styleType: 'currency' as const },
           { value: e.tirAmPercent / 100, formula: `=(J${r}/G${r})^(1/(B${r}+C${r}))-1`, styleType: 'percent' as const },
@@ -1280,62 +1280,14 @@ export function exportToExcel(
   XLSX.utils.book_append_sheet(wb, sheet13.ws, sheet13.sheetName);
 
   // =============================================================
-  // ABA 14: JUROS & TIR CREDOR (Módulo 14)
-  // =============================================================
-  const aba14Rows: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '14.1. CÁLCULO DOS JUROS PAGOS E TAXA INTERNA DE RETORNO (TIR DO CREDOR)' }] },
-    {
-      type: 'header',
-      cells: [
-        { value: 'Credor / Instituição', align: 'left' },
-        { value: 'Nº Contrato', align: 'center' },
-        { value: 'Capital Contratado (R$)', align: 'right' },
-        { value: 'Total Recebido (R$)', align: 'right' },
-        { value: 'Lucro do Credor (R$)', align: 'right' },
-        { value: 'TIR (% a.m.)', align: 'center' },
-        { value: 'TIR (% a.a.)', align: 'center' }
-      ]
-    },
-    ...evolution.map((e, i) => {
-      const r = 5 + i;
-      return {
-        type: 'data' as const,
-        cells: [
-          { value: e.credor, formula: `='5. Contratos Bancários'!A${r}` },
-          { value: e.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
-          { value: e.valorLiberado, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
-          { value: e.totalPagoJaPagasERepactuadas, formula: `='12. Evolução Contratos'!G${r}`, styleType: 'currency' as const },
-          { value: e.totalPagoAcimaDoValorLiberado, formula: `='12. Evolução Contratos'!H${r}`, styleType: 'currency' as const },
-          { value: e.tirAmPercent / 100, formula: `='12. Evolução Contratos'!I${r}`, styleType: 'percent' as const },
-          { value: e.tirAaPercent / 100, formula: `='12. Evolução Contratos'!J${r}`, styleType: 'percent' as const }
-        ]
-      };
-    }),
-    {
-      type: 'total',
-      cells: [
-        { value: 'TOTAL GERAL JUROS E RETORNO' },
-        { value: '' },
-        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), formula: `=SUM(C5:C${4 + N_contracts})`, styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
-        { value: '' },
-        { value: '' }
-      ]
-    }
-  ];
-  const sheet14 = buildStyledSheet('14. Juros & TIR Credor', 'MÓDULO 14 — CÁLCULO DOS JUROS PAGOS E TIR DO CREDOR', aba14Rows, [30, 20, 22, 22, 22, 16, 16]);
-  XLSX.utils.book_append_sheet(wb, sheet14.ws, sheet14.sheetName);
-
-  // =============================================================
-  // ABA 15: PRICE 60 PARCELAS (Módulo 15)
+  // ABA 14: PRICE 60 PARCELAS (Módulo 14)
   // =============================================================
   const iPlano = 0;
   let currentSaldoPlano = summary.totalSaldoDevedorINPC;
   const pmtPlanoMes = summary.capacidadeMensalPlano;
 
   const rowsPrice60: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '15.1. CRONOGRAMA DE AMORTIZAÇÃO TABELA PRICE EM 60 PARCELAS DO PLANO COMPULSÓRIO' }] },
+    { type: 'section', cells: [{ value: '14.1. CRONOGRAMA DE AMORTIZAÇÃO TABELA PRICE EM 60 PARCELAS DO PLANO COMPULSÓRIO' }] },
     {
       type: 'header',
       cells: [
@@ -1358,7 +1310,7 @@ export function exportToExcel(
     const saldoInicialFormula = m === 1 ? `='10. Dívidas Tabela 6'!E${totalRow10}` : `=F${r - 1}`;
     const jurosFormula = `=0`;
     const amortFormula = m === 1 ? `=E${r}` : `=MIN(B${r}, E${r})`;
-    const pmtFormula = `='17. Plano Rateio 60X'!E${totalRow17}`;
+    const pmtFormula = `='16. Plano Rateio 60X'!E${totalRow16}`;
     const saldoFinalFormula = `=MAX(0, B${r}-D${r})`;
 
     rowsPrice60.push({
@@ -1382,16 +1334,16 @@ export function exportToExcel(
       { value: summary.totalSaldoDevedorINPC, formula: `='10. Dívidas Tabela 6'!E${totalRow10}`, styleType: 'currency' },
       { value: 0, formula: `=SUM(C5:C64)`, styleType: 'currency' },
       { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(D5:D64)`, styleType: 'currency' },
-      { value: summary.capacidadeMensalPlano, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' },
+      { value: summary.capacidadeMensalPlano, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' },
       { value: 0, formula: `=F64`, styleType: 'currency' }
     ]
   });
 
-  const sheet15 = buildStyledSheet('15. Price 60 Parcelas', 'MÓDULO 15 — AMORTIZAÇÃO TABELA PRICE (60 PARCELAS)', rowsPrice60, [15, 25, 18, 20, 25, 25]);
-  XLSX.utils.book_append_sheet(wb, sheet15.ws, sheet15.sheetName);
+  const sheet14 = buildStyledSheet('14. Price 60 Parcelas', 'MÓDULO 14 — AMORTIZAÇÃO TABELA PRICE (60 PARCELAS)', rowsPrice60, [15, 25, 18, 20, 25, 25]);
+  XLSX.utils.book_append_sheet(wb, sheet14.ws, sheet14.sheetName);
 
   // =============================================================
-  // ABA 16: CONSOLIDAÇÃO PASSIVO (Módulo 16)
+  // ABA 15: CONSOLIDAÇÃO PASSIVO (Módulo 15)
   // =============================================================
   const rlaPosRepactuacaoVal = summary.rla + consignadosFolha;
   const pmtPlanoVal = summary.capacidadeMensalPlano;
@@ -1399,8 +1351,8 @@ export function exportToExcel(
   const percentComprometimentoPosPlanoVal = rlaPosRepactuacaoVal > 0 ? (pmtPlanoVal / rlaPosRepactuacaoVal) * 100 : 0;
   const percentPreservadoPosPlanoVal = 100 - percentComprometimentoPosPlanoVal;
 
-  const aba16Rows: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '16.1. CONSOLIDAÇÃO DO PASSIVO E CAPACIDADE DE PAGAMENTO DO DEVEDOR' }] },
+  const aba15Rows: SheetRowDefinition[] = [
+    { type: 'section', cells: [{ value: '15.1. CONSOLIDAÇÃO DO PASSIVO E CAPACIDADE DE PAGAMENTO DO DEVEDOR' }] },
     {
       type: 'header',
       cells: [
@@ -1411,7 +1363,7 @@ export function exportToExcel(
     },
     { type: 'data', cells: [{ value: 'Renda Líquida Ajustada Pós-Repactuação (RLA)' }, { value: rlaPosRepactuacaoVal, formula: `='3. RLA e Despesas'!C${rlaRow3}`, styleType: 'currency' }, { value: 'Renda reorganizada', align: 'center' }] },
     { type: 'data', cells: [{ value: '(−) Despesas Essenciais Comprovadas' }, { value: summary.totalDespesas, formula: `='3. RLA e Despesas'!C${expTotalRow3}`, styleType: 'currency' }, { value: 'Mínimo Existencial assegurado', align: 'center' }] },
-    { type: 'data', cells: [{ value: '(−) Prestação Mensal do Plano Compulsório (PMT 60x)' }, { value: pmtPlanoVal, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' }, { value: 'Repactuação em 60 parcelas iguais', align: 'center' }] },
+    { type: 'data', cells: [{ value: '(−) Prestação Mensal do Plano Compulsório (PMT 60x)' }, { value: pmtPlanoVal, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' }, { value: 'Repactuação em 60 parcelas iguais', align: 'center' }] },
     {
       type: 'total',
       cells: [
@@ -1438,14 +1390,14 @@ export function exportToExcel(
       ]
     }
   ];
-  const sheet16 = buildStyledSheet('16. Consolidação Passivo', 'MÓDULO 16 — CONSOLIDAÇÃO DO PASSIVO & CAPACIDADE DE PAGAMENTO', aba16Rows, [45, 25, 30]);
-  XLSX.utils.book_append_sheet(wb, sheet16.ws, sheet16.sheetName);
+  const sheet15 = buildStyledSheet('15. Consolidação Passivo', 'MÓDULO 15 — CONSOLIDAÇÃO DO PASSIVO & CAPACIDADE DE PAGAMENTO', aba15Rows, [45, 25, 30]);
+  XLSX.utils.book_append_sheet(wb, sheet15.ws, sheet15.sheetName);
 
   // =============================================================
-  // ABA 17: PLANO RATEIO 60X (Módulo 17)
+  // ABA 16: PLANO RATEIO 60X (Módulo 16)
   // =============================================================
-  const aba17Rows: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '17.1. PLANO DE PAGAMENTO COMPULSÓRIO EM 60 PARCELAS (ART. 104-B §4º DO CDC)' }] },
+  const aba16Rows: SheetRowDefinition[] = [
+    { type: 'section', cells: [{ value: '16.1. PLANO DE PAGAMENTO COMPULSÓRIO EM 60 PARCELAS (ART. 104-B §4º DO CDC)' }] },
     {
       type: 'header',
       cells: [
@@ -1465,7 +1417,7 @@ export function exportToExcel(
           { value: p.credor, formula: `='5. Contratos Bancários'!A${r}` },
           { value: p.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
           { value: p.saldoDevedorINPC, formula: `='9. Saldos Corrigidos'!F${r}`, styleType: 'currency' as const },
-          { value: p.percentualDoTotal / 100, formula: `=C${r}/C${totalRow17}`, styleType: 'percent' as const },
+          { value: p.percentualDoTotal / 100, formula: `=C${r}/C${totalRow16}`, styleType: 'percent' as const },
           { value: p.parcelaRepactuadaPMT, formula: `='3. RLA e Despesas'!C${sobraRow3}*D${r}`, styleType: 'currency' as const },
           { value: p.totalQuitado60m, formula: `=E${r}*60`, styleType: 'currency' as const }
         ]
@@ -1483,14 +1435,14 @@ export function exportToExcel(
       ]
     }
   ];
-  const sheet17 = buildStyledSheet('17. Plano Rateio 60X', 'MÓDULO 17 — PLANO DE PAGAMENTO COMPULSÓRIO (RATEIO PROPORCIONAL 60X)', aba17Rows, [30, 20, 22, 20, 25, 25]);
-  XLSX.utils.book_append_sheet(wb, sheet17.ws, sheet17.sheetName);
+  const sheet16 = buildStyledSheet('16. Plano Rateio 60X', 'MÓDULO 16 — PLANO DE PAGAMENTO COMPULSÓRIO (RATEIO PROPORCIONAL 60X)', aba16Rows, [30, 20, 22, 20, 25, 25]);
+  XLSX.utils.book_append_sheet(wb, sheet16.ws, sheet16.sheetName);
 
   // =============================================================
-  // ABA 18: QUESITOS & PARECER (Módulo 18)
+  // ABA 17: QUESITOS & PARECER (Módulo 17/18)
   // =============================================================
-  const aba18Rows: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '18.1. RESPOSTAS TÉCNICAS AOS QUESITOS PERICIAIS' }] },
+  const aba17Rows: SheetRowDefinition[] = [
+    { type: 'section', cells: [{ value: '17.1. RESPOSTAS TÉCNICAS AOS QUESITOS PERICIAIS' }] },
     {
       type: 'header',
       cells: [
@@ -1510,7 +1462,7 @@ export function exportToExcel(
       ]
     })),
     { type: 'empty', cells: [] },
-    { type: 'section', cells: [{ value: '18.2. PARECER PERICIAL E CONCLUSÃO TÉCNICO-CONTÁBIL DO LAUDO' }] },
+    { type: 'section', cells: [{ value: '17.2. PARECER PERICIAL E CONCLUSÃO TÉCNICO-CONTÁBIL DO LAUDO' }] },
     {
       type: 'data',
       cells: [
@@ -1521,8 +1473,8 @@ export function exportToExcel(
       ]
     }
   ];
-  const sheet18 = buildStyledSheet('18. Quesitos & Parecer', 'MÓDULO 18 — PARECER TÉCNICO, EMISSÃO DO LAUDO PERICIAL & QUESITOS', aba18Rows, [15, 18, 45, 50]);
-  XLSX.utils.book_append_sheet(wb, sheet18.ws, sheet18.sheetName);
+  const sheet17 = buildStyledSheet('17. Quesitos & Parecer', 'MÓDULO 18 — PARECER TÉCNICO, EMISSÃO DO LAUDO PERICIAL & QUESITOS', aba17Rows, [15, 18, 45, 50]);
+  XLSX.utils.book_append_sheet(wb, sheet17.ws, sheet17.sheetName);
 
   // =============================================================
   // ABAS INDIVIDUAIS POR CREDOR (BRB, Sicoob, Banco do Brasil, etc)

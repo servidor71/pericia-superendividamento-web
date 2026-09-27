@@ -43,7 +43,7 @@ export const SobrePage: React.FC<SobrePageProps> = ({ onNavigate }) => {
                 <span>Nossa Missão</span>
               </div>
               <p className="text-xs text-slate-600">
-                Democratizar o acesso a laudos periciais de alta precisão técnica, fornecendo a peritos e escritórios uma solução automatizada em 19 módulos integrados.
+                Democratizar o acesso a laudos periciais de alta precisão técnica, fornecendo a peritos e escritórios uma solução automatizada em 18 módulos integrados.
               </p>
             </div>
 

@@ -36,12 +36,11 @@ export const sidebarModules = [
   { id: 11, label: 'Módulo 11: Cenário Revisional com Taxa Média BACEN', group: 'FASE IV - DEMONSTRATIVOS & BENCHMARK', icon: TrendingUp },
   { id: 12, label: 'Módulo 12: Análise da Evolução dos Contratos - Valores Contratados x Recebidos', group: 'FASE IV - DEMONSTRATIVOS & BENCHMARK', icon: LineChart },
   { id: 13, label: 'Módulo 13: Demonstração do Total Pago por Contrato', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Award },
-  { id: 14, label: 'Módulo 14: Cálculo dos Juros Pagos & TIR do Credor', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TrendingUp },
-  { id: 15, label: 'Módulo 15: Amortização Tabela Price (60 Parcelas)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
-  { id: 16, label: 'Módulo 16: Consolidação do Passivo & Capacidade de Pagamento', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
-  { id: 17, label: 'Módulo 17: Engines de Repactuação (Plano Compulsório 60x & Voluntário)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
-  { id: 18, label: 'Módulo 18: Plano de Pagamento Compulsório (Rateio Proporcional Price)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
-  { id: 19, label: 'Módulo 19: Parecer Técnico, Emissão do Laudo Pericial & Exportações', group: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL', icon: Award },
+  { id: 14, label: 'Módulo 14: Amortização Tabela Price (60 Parcelas)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
+  { id: 15, label: 'Módulo 15: Consolidação do Passivo & Capacidade de Pagamento', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
+  { id: 16, label: 'Módulo 16: Engines de Repactuação (Plano Compulsório 60x & Voluntário)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: Calculator },
+  { id: 17, label: 'Módulo 17: Plano de Pagamento Compulsório (Rateio Proporcional Price)', group: 'FASE V - REPACTUAÇÃO & PLANOS 60X', icon: TableProperties },
+  { id: 18, label: 'Módulo 18: Parecer Técnico, Emissão do Laudo Pericial & Exportações', group: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL', icon: Award },
 ];
 
 export const phaseDefinitions = [
@@ -73,13 +72,13 @@ export const phaseDefinitions = [
     id: 'fase5',
     shortLabel: 'Fase V: Repactuação 60x',
     fullTitle: 'FASE V - REPACTUAÇÃO & PLANOS 60X',
-    modules: [13, 14, 15, 16, 17, 18],
+    modules: [13, 14, 15, 16, 17],
   },
   {
     id: 'fase6',
     shortLabel: 'Fase VI: Laudo Pericial',
     fullTitle: 'FASE VI - ENCERRAMENTO & LAUDO PERICIAL',
-    modules: [19],
+    modules: [18],
   },
 ];
 

@@ -810,7 +810,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
         </tbody>
       </table>
 
-      <h3>VII.7. Balanço Financeiro Consolidado e Recursos Livres (Módulo 16)</h3>
+      <h3>VII.7. Balanço Financeiro Consolidado e Recursos Livres (Módulo 15)</h3>
       <table>
         <thead>
           <tr>
@@ -939,32 +939,6 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
               <td class="text-right">${formatCurrency((c as any).totalEncargoContratual || c.valorParcelaAtual)}</td>
               <td class="text-right">${formatCurrency((c as any).totalEncargoBacen || c.valorParcelaAtual)}</td>
               <td class="text-right font-bold text-emerald-700">${formatCurrency((c as any).diferencaEncargoBacen || 0)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
-      <h3>X.1. Taxa Interna de Retorno (TIR) e Remuneração dos Credores no Plano (Módulo 14)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Credor / Contrato</th>
-            <th class="text-right">Capital Liberado (R$)</th>
-            <th class="text-right">Total Recebido (R$)</th>
-            <th class="text-right">Lucro Bruto Credor (R$)</th>
-            <th class="text-center">TIR Mensal (% a.m.)</th>
-            <th class="text-center">TIR Anual (% a.a.)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${evolution.map(e => `
-            <tr>
-              <td>${e.credor} (${e.numeroContrato})</td>
-              <td class="text-right">${formatCurrency(e.valorLiberado)}</td>
-              <td class="text-right">${formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
-              <td class="text-right font-bold text-emerald-700">${formatCurrency(e.totalPagoAcimaDoValorLiberado)}</td>
-              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
-              <td class="text-center">${e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1237,30 +1211,6 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
         </tbody>
       </table>
 
-      <h3>8.2. Taxa Interna de Retorno (TIR) por Credor no Plano (Módulo 14)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Credor / Contrato</th>
-            <th class="text-right">Capital Liberado (R$)</th>
-            <th class="text-right">Total Recebido (R$)</th>
-            <th class="text-center">TIR Mensal (% a.m.)</th>
-            <th class="text-center">TIR Anual (% a.a.)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${evolution.map(e => `
-            <tr>
-              <td>${e.credor} (${e.numeroContrato})</td>
-              <td class="text-right">${formatCurrency(e.valorLiberado)}</td>
-              <td class="text-right">${formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
-              <td class="text-center font-bold">${e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
-              <td class="text-center">${e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
       <h2>9. BALANÇO FINANCEIRO DO DEVEDOR</h2>
       ${formatParagraphsHtml(planoCompulsorioSections.sec9_balanco_financeiro)}
       <h3>Situação Atual:</h3>
@@ -1391,7 +1341,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-black text-[#1C2B33] font-serif-header">
-              Módulo 19: Emissão do Laudo Pericial, Parecer Técnico & Exportações
+              Módulo 18: Parecer Técnico, Emissão do Laudo Pericial & Exportações
             </h2>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               Parecer Técnico Completo (Lei 14.181/2021), Laudo Pericial em PDF/Word, Minuta de Petição e Quesitos
@@ -2570,7 +2520,7 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-black text-slate-900 uppercase font-sans mb-2">VII.7. Balanço Financeiro Consolidado e Recursos Livres (Módulo 16)</h3>
+                  <h3 className="text-xs font-black text-slate-900 uppercase font-sans mb-2">VII.7. Balanço Financeiro Consolidado e Recursos Livres (Módulo 15)</h3>
                   <div className="overflow-x-auto font-sans text-xs">
                     <table className="w-full text-left border border-slate-300">
                       <thead>
@@ -2736,36 +2686,6 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
-
-              <div className="pt-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase font-sans mb-2">X.1. Taxa Interna de Retorno (TIR) e Remuneração dos Credores no Plano (Módulo 14)</h3>
-                <div className="overflow-x-auto font-sans text-xs">
-                  <table className="w-full text-left border border-slate-300">
-                    <thead>
-                      <tr className="bg-slate-100 font-black text-slate-900 border-b border-slate-300">
-                        <th className="py-2 px-3">Credor / Contrato</th>
-                        <th className="py-2 px-3 text-right">Capital Liberado (R$)</th>
-                        <th className="py-2 px-3 text-right">Total Recebido (R$)</th>
-                        <th className="py-2 px-3 text-right">Lucro Bruto Credor (R$)</th>
-                        <th className="py-2 px-3 text-center">TIR Mensal (% a.m.)</th>
-                        <th className="py-2 px-3 text-center">TIR Anual (% a.a.)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {evolution.map(e => (
-                        <tr key={e.numeroContrato}>
-                          <td className="py-2 px-3 font-bold">{e.credor} ({e.numeroContrato})</td>
-                          <td className="py-2 px-3 text-right font-mono">{formatCurrency(e.valorLiberado)}</td>
-                          <td className="py-2 px-3 text-right font-mono">{formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(e.totalPagoAcimaDoValorLiberado)}</td>
-                          <td className="py-2 px-3 text-center font-mono font-bold">{e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
-                          <td className="py-2 px-3 text-center font-mono">{e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             </div>
 
@@ -3301,34 +3221,6 @@ export const Module7LaudoExportacoes: React.FC<Module7Props> = ({
                           <td className="text-right font-mono">{formatCurrency(summary.capacidadeMensalPlano * 60)}</td>
                           <td className="text-right font-mono text-blue-900">{formatCurrency(evolution.reduce((a,e) => a + e.totalPagoJaPagasERepactuadas, 0))}</td>
                         </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xs font-black text-slate-900 uppercase mb-2">8.2. Taxa Interna de Retorno (TIR) por Credor no Plano (Módulo 14)</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border border-slate-300">
-                      <thead>
-                        <tr className="bg-slate-100 font-black text-slate-900 border-b border-slate-300">
-                          <th className="py-2.5 px-3">Credor / Contrato</th>
-                          <th className="py-2.5 px-3 text-right">Capital Liberado (R$)</th>
-                          <th className="py-2.5 px-3 text-right">Total Recebido (R$)</th>
-                          <th className="py-2.5 px-3 text-center">TIR Mensal (% a.m.)</th>
-                          <th className="py-2.5 px-3 text-center">TIR Anual (% a.a.)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 font-mono">
-                        {evolution.map(e => (
-                          <tr key={e.numeroContrato}>
-                            <td className="font-sans font-bold">{e.credor} ({e.numeroContrato})</td>
-                            <td className="text-right">{formatCurrency(e.valorLiberado)}</td>
-                            <td className="text-right">{formatCurrency(e.totalPagoJaPagasERepactuadas)}</td>
-                            <td className="text-center font-bold">{e.tirAmPercent.toFixed(2).replace('.', ',')}%</td>
-                            <td className="text-center">{e.tirAaPercent.toFixed(2).replace('.', ',')}%</td>
-                          </tr>
-                        ))}
                       </tbody>
                     </table>
                   </div>

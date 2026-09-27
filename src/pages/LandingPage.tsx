@@ -84,12 +84,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onSelectPl
         </div>
       </section>
 
-      {/* 2. DEMONSTRAÇÃO DOS 19 MÓDULOS PERICIAIS */}
+      {/* 2. DEMONSTRAÇÃO DOS 18 MÓDULOS PERICIAIS */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12">
         <div className="text-center space-y-3 max-w-3xl mx-auto">
           <h2 className="text-xs font-black uppercase text-blue-600 tracking-widest">Arquitetura de Cálculo Completa</h2>
           <h3 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Tudo o que Você Precisa para Perícias em Superendividamento em 19 Módulos
+            Tudo o que Você Precisa para Perícias em Superendividamento em 18 Módulos
           </h3>
           <p className="text-slate-600 text-sm">
             Estrutura pericial desenhada rigorosamente para atender aos requisitos judiciais da Lei nº 14.181/2021 e jurisprudências dos Tribunais de Justiça.
@@ -147,9 +147,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onSelectPl
             <div className="w-11 h-11 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center border border-cyan-200">
               <Calculator className="w-5 h-5" />
             </div>
-            <h4 className="text-base font-bold text-slate-900">Módulos 14 a 18: Amortização Price 60x & Rateio</h4>
+            <h4 className="text-base font-bold text-slate-900">Módulos 14 a 17: Amortização Price 60x & Rateio</h4>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Simulação de amortização compulsória em 60 parcelas mensais, cálculo da Taxa Interna de Retorno (TIR) do Credor e plano de rateio proporcional.
+              Simulação de amortização compulsória em 60 parcelas mensais, capacidade de pagamento e plano de rateio proporcional.
             </p>
           </div>
 
@@ -158,7 +158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onSelectPl
             <div className="w-11 h-11 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center border border-rose-200">
               <Award className="w-5 h-5" />
             </div>
-            <h4 className="text-base font-bold text-slate-900">Módulo 19: Exportação de Laudo em 1-Clique</h4>
+            <h4 className="text-base font-bold text-slate-900">Módulo 18: Exportação de Laudo em 1-Clique</h4>
             <p className="text-xs text-slate-600 leading-relaxed">
               Exportação do laudo pericial completo em formato Word (.docx), Excel (.xlsx) e PDF com resposta automatizada aos quesitos judiciais do juízo e partes.
             </p>

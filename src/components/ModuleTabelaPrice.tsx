@@ -86,7 +86,7 @@ export const ModuleTabelaPrice: React.FC<ModulePriceProps> = ({
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-black text-[#1C2B33] font-serif-header">
-              Módulo 15: TABELA PRICE - AMORTIZAÇÃO DO PLANO ({prazoMeses} PARCELAS)
+              Módulo 14: TABELA PRICE - AMORTIZAÇÃO DO PLANO ({prazoMeses} PARCELAS)
             </h2>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               Cálculo exato da prestação de amortização do plano compulsório via Sistema Price

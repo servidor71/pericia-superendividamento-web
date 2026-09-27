@@ -71,7 +71,7 @@ export const Module5ConsolidacaoPassivo: React.FC<Module5Props> = ({ income, exp
             <BarChart3 className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-black text-[#1C2B33] font-serif-header">Módulo 16: Consolidação do Passivo & Capacidade de Pagamento</h2>
+            <h2 className="text-sm sm:text-base font-black text-[#1C2B33] font-serif-header">Módulo 15: Consolidação do Passivo & Capacidade de Pagamento</h2>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">Síntese Global das Dívidas e Limite Legal da RLA para o Plano de 60 Parcelas</p>
           </div>
         </div>

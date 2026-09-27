@@ -149,7 +149,7 @@ export const Module6PlanosRepactuacao: React.FC<Module6Props> = ({
           </div>
           <div>
             <h2 className="text-base font-black text-[#1C2B33] font-serif-header">
-              Módulo 17: Engines de Repactuação (Plano Compulsório 60x & Voluntário)
+              Módulo 16: Engines de Repactuação (Plano Compulsório 60x & Voluntário)
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
               Simulação das propostas de pagamento (CDC Arts. 104-A e 104-B)

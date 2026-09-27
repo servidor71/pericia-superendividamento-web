@@ -10,16 +10,16 @@ export const SuportePage: React.FC<SuportePageProps> = ({ onNavigate }) => {
 
   const faqs = [
     {
-      q: 'Como funciona o preenchimento automático em 19 Módulos?',
+      q: 'Como funciona o preenchimento automático em 18 Módulos?',
       a: 'Ao anexar a Petição Inicial ou comprovantes no Módulo 2, o sistema de leitor de documentos OCR analisa o texto e auto-popula a qualificação das partes (Módulo 3), salários e pensões (Módulo 5) e operações bancárias.'
     },
     {
       q: 'Como são aplicadas as taxas médias de juros do Banco Central?',
-      a: 'O sistema inclui a tabela histórica oficial de taxas médias de mercado do BACEN para consignados e crédito pessoal, aplicando automaticamente o confronto revisional nos Módulos 12 e 15.'
+      a: 'O sistema inclui a tabela histórica oficial de taxas médias de mercado do BACEN para consignados e crédito pessoal, aplicando automaticamente o confronto revisional nos Módulos 11 e 12.'
     },
     {
       q: 'Como exportar o Laudo em formato Word (.docx) ou Excel?',
-      a: 'No Módulo 19 (Laudo & Exportações), basta clicar nos botões de download. O laudo é gerado em formato Word 100% editável com timbre, tabelas de cálculo e resposta aos quesitos.'
+      a: 'No Módulo 18 (Laudo & Exportações), basta clicar nos botões de download. O laudo é gerado em formato Word 100% editável com timbre, tabelas de cálculo e resposta aos quesitos.'
     },
     {
       q: 'Posso utilizar em mais de um computador ou escritório?',

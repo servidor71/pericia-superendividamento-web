@@ -43,7 +43,7 @@ export const CadastroPage: React.FC<CadastroPageProps> = ({ onNavigate }) => {
           </div>
 
           <p className="text-xs text-slate-500 font-medium">
-            Preencha seus dados abaixo para acessar os 19 módulos da plataforma.
+            Preencha seus dados abaixo para acessar os 18 módulos da plataforma.
           </p>
         </div>
 

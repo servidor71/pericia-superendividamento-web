@@ -30,7 +30,6 @@ import { ModuleDividasIncluidasPlano } from './components/ModuleDividasIncluidas
 import { ModuleTabelaPrice } from './components/ModuleTabelaPrice';
 import { ModulePlanoPagamentoCompulsorio } from './components/ModulePlanoPagamentoCompulsorio';
 import { ModuleDemonstracaoTotalPagoContrato } from './components/ModuleDemonstracaoTotalPagoContrato';
-import { ModuleJurosETIRCredor } from './components/ModuleJurosETIRCredor';
 import { Module5ConsolidacaoPassivo } from './components/Module5ConsolidacaoPassivo';
 import { Module6PlanosRepactuacao } from './components/Module6PlanosRepactuacao';
 import { Module7LaudoExportacoes } from './components/Module7LaudoExportacoes';
@@ -612,26 +611,22 @@ export function App() {
               )}
 
               {activeTab === 14 && (
-                <ModuleJurosETIRCredor income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} />
-              )}
-
-              {activeTab === 15 && (
                 <ModuleTabelaPrice income={income} expenses={expenses} contracts={contracts} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
-              {activeTab === 16 && (
+              {activeTab === 15 && (
                 <Module5ConsolidacaoPassivo income={income} expenses={expenses} contracts={contracts} />
               )}
 
-              {activeTab === 17 && (
+              {activeTab === 16 && (
                 <Module6PlanosRepactuacao income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
-              {activeTab === 18 && (
+              {activeTab === 17 && (
                 <ModulePlanoPagamentoCompulsorio income={income} expenses={expenses} contracts={contracts} onContractsChange={handleContractsChange} taxaJurosAm={taxaJurosPlano} onTaxaJurosChange={setTaxaJurosPlano} />
               )}
 
-              {activeTab === 19 && (
+              {activeTab === 18 && (
                 <Module7LaudoExportacoes
                   process={process}
                   income={income}

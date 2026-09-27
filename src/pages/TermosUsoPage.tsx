@@ -37,7 +37,7 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onNavigate }) => {
               1. Concessão de Licença SaaS
             </h2>
             <p>
-              Ao assinar qualquer plano da Plataforma, é concedida ao contratante uma licença de uso revogável, não exclusiva e intransferível para aceso aos 19 módulos de cálculo pericial e geração de laudos.
+              Ao assinar qualquer plano da Plataforma, é concedida ao contratante uma licença de uso revogável, não exclusiva e intransferível para aceso aos 18 módulos de cálculo pericial e geração de laudos.
             </p>
           </section>
 
