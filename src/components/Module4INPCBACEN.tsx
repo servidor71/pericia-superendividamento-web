@@ -380,7 +380,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                           {formatCurrency(vlrCorrigido)}
                         </td>
                         <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-800 font-mono">
-                          {(Number(c.taxaJurosMes) || 0).toFixed(2)}%
+                          {(Number(c.taxaJurosMes) || 0).toFixed(2).replace('.', ',')}%
                         </td>
                         <td className="py-2.5 px-3 text-right border-r border-slate-200">
                           <input
@@ -395,7 +395,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                         </td>
                         <td className="py-2.5 px-3 text-right border-r border-slate-200 font-mono font-normal">
                           <span className={`text-[11px] ${diffTaxa > 0 ? 'text-red-700 font-bold' : diffTaxa < 0 ? 'text-emerald-700 font-bold' : 'text-slate-700'}`}>
-                            {diffTaxa > 0 ? `+${diffTaxa.toFixed(2)}%` : `${diffTaxa.toFixed(2)}%`}
+                            {diffTaxa > 0 ? `+${diffTaxa.toFixed(2).replace('.', ',')}%` : `${diffTaxa.toFixed(2).replace('.', ',')}%`}
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
