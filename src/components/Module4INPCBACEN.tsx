@@ -363,15 +363,17 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                         </td>
                         
                         {/* Fator sozinho na célula sem dropdown repetido */}
-                        <td className="py-2.5 px-3 text-center border-r border-slate-200 bg-slate-50/50">
-                          <input
-                            type="number"
-                            step="0.0000001"
-                            disabled={!isEditing}
-                            value={c.fatorCorrecao7Casas || 1.0}
-                            onChange={(e) => handleUpdate(c.id, 'fatorCorrecao7Casas', parseFloat(e.target.value) || 1.0)}
-                            className="w-24 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-800 text-[11px] bg-white disabled:bg-slate-100 block mx-auto"
-                          />
+                        <td className="py-2.5 px-3 text-center border-r border-slate-200 bg-slate-50/50 font-mono">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={(Number(c.fatorCorrecao7Casas || 1.0)).toFixed(7).replace('.', ',')}
+                              onChange={(e) => handleUpdate(c.id, 'fatorCorrecao7Casas', parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')) || 1.0)}
+                              className="w-28 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-bold text-blue-900 text-[11px] bg-white block mx-auto shadow-2xs"
+                            />
+                          ) : (
+                            <span className="font-bold text-blue-900">{(Number(c.fatorCorrecao7Casas || 1.0)).toFixed(7).replace('.', ',')}</span>
+                          )}
                         </td>
 
                         <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-800 font-mono">
@@ -569,15 +571,17 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                         </td>
                         
                         {/* Fator sozinho na célula sem dropdown repetido */}
-                        <td className="py-2.5 px-3 text-center border-r border-slate-200">
-                          <input
-                            type="number"
-                            step="0.0000001"
-                            disabled={!isEditing}
-                            value={c.fatorCorrecao7Casas || 1.0}
-                            onChange={(e) => handleUpdate(c.id, 'fatorCorrecao7Casas', parseFloat(e.target.value) || 1.0)}
-                            className="w-24 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-800 text-[11px] bg-white disabled:bg-slate-100 block mx-auto"
-                          />
+                        <td className="py-2.5 px-3 text-center border-r border-slate-200 font-mono">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={(Number(c.fatorCorrecao7Casas || 1.0)).toFixed(7).replace('.', ',')}
+                              onChange={(e) => handleUpdate(c.id, 'fatorCorrecao7Casas', parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')) || 1.0)}
+                              className="w-28 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-bold text-emerald-900 text-[11px] bg-white block mx-auto shadow-2xs"
+                            />
+                          ) : (
+                            <span className="font-bold text-emerald-900">{(Number(c.fatorCorrecao7Casas || 1.0)).toFixed(7).replace('.', ',')}</span>
+                          )}
                         </td>
 
                         <td className="py-2.5 px-3 text-right font-normal text-slate-800 text-xs font-mono">
