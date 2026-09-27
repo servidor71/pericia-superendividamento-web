@@ -18,14 +18,51 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
 }) => {
   const [isEditing, setIsEditing] = useState(true);
 
-  // Helper para calcular a PMT pela Taxa Média BACEN de cada contrato
+  // Recálculo exato da Prestação Mensal PMT pela Taxa Média BACEN de cada contrato
   const calculatePmtBacen = (c: Contract) => {
-    const vp = c.valorLiberadoContrato || 0;
-    const n = c.qtdParcelasTotal || 0;
-    const iBacen = (c.taxaMediaBacenMes || 0) / 100;
+    const vp = Number(c.valorLiberadoContrato) || 0;
+    const pmtAtual = Number(c.valorParcelaAtual) || 0;
+    let n = Number(c.qtdParcelasTotal) || 0;
+    const iBacen = (Number(c.taxaMediaBacenMes) || 0) / 100;
+    const iContrato = (Number(c.taxaJurosMes) || 0) / 100;
 
-    if (iBacen <= 0 || n <= 0) return vp / (n || 1);
-    return (vp * (iBacen * Math.pow(1 + iBacen, n))) / (Math.pow(1 + iBacen, n) - 1);
+    // Se o número de parcelas n não foi informado ou é 1 (ex: contratos importados sem prazo), estima n ou assume 60 parcelas (padrão pericial)
+    if (n <= 1) {
+      if (pmtAtual > 0 && iContrato > 0 && vp > pmtAtual) {
+        const top = pmtAtual;
+        const bottom = pmtAtual - vp * iContrato;
+        if (bottom > 0) {
+          const estimatedN = Math.round(Math.log(top / bottom) / Math.log(1 + iContrato));
+          if (estimatedN > 1 && estimatedN <= 360) {
+            n = estimatedN;
+          }
+        }
+      }
+      if (n <= 1) n = 60; // Prazo de repactuação pericial de superendividamento (Art. 104-B CDC)
+    }
+
+    // 1. Se possui Taxa Média BACEN e valor contratado, calcula a PMT pela Tabela Price
+    if (iBacen > 0 && vp > 0 && n > 1) {
+      const pmtCalc = (vp * (iBacen * Math.pow(1 + iBacen, n))) / (Math.pow(1 + iBacen, n) - 1);
+      return Math.round(pmtCalc * 100) / 100;
+    }
+
+    // 2. Se iBacen e iContrato estão definidos e há PMT atual, proporcionaliza pela razão das taxas
+    if (pmtAtual > 0 && iBacen > 0 && iContrato > 0) {
+      return Math.round((pmtAtual * (iBacen / iContrato)) * 100) / 100;
+    }
+
+    // 3. Se houver prestação mensal atual (PMT) cadastrada, utiliza a prestação mensal como referência
+    if (pmtAtual > 0) {
+      return pmtAtual;
+    }
+
+    // 4. Se só houver capital liberado e prazo > 1
+    if (vp > 0 && n > 1) {
+      return Math.round((vp / n) * 100) / 100;
+    }
+
+    return 0;
   };
 
   // Cálculo da PMT contratual vs PMT BACEN acumulada
@@ -69,9 +106,9 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
       valorLiberadoContrato: 0,
       valorFinalContrato: 0,
       valorIOF: 0,
-      qtdParcelasTotal: 0,
+      qtdParcelasTotal: 60,
       qtdParcelasPagas: 0,
-      qtdParcelasRestantes: 0,
+      qtdParcelasRestantes: 60,
       valorParcelaAtual: 0,
       taxaJurosMes: 0,
       taxaJurosAno: 0,
@@ -85,7 +122,7 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
       tipoIndiceCorrecao: 'INPC',
       fatorCorrecao7Casas: 1.0160724,
       dataReferenciaUltimoPagamento: new Date().toISOString().split('T')[0],
-      saldoDevedorRefUltimaParcela: 5000.00,
+      saldoDevedorRefUltimaParcela: 0,
       taxaMediaBacenMes: 1.45,
     };
     onContractsChange([...contracts, newContract]);
@@ -216,7 +253,7 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
                   </td>
 
                   {/* Encargo Mensal Taxa Media BACEN */}
-                  <td className="py-2.5 px-3 text-center font-mono font-normal text-slate-900 border-r border-slate-200">
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-slate-900 border-r border-slate-200">
                     {formatCurrency(row.pmtBacen)}
                   </td>
 
@@ -242,7 +279,7 @@ export const ModuleCenarioRevisionalBacen: React.FC<ModuleCenarioRevisionalBacen
                 <td className="py-3 px-4 text-center font-black border-r border-slate-200" colSpan={3}>
                   TOTAL ENCARGO MENSAL COM TAXA MÉDIA BACEN ==&gt;&gt;
                 </td>
-                <td className="py-3 px-4 text-right font-black font-mono text-emerald-800 text-sm" colSpan={isEditing ? 2 : 1}>
+                <td className="py-3 px-4 text-center font-black font-mono text-emerald-800 text-sm" colSpan={isEditing ? 2 : 1}>
                   {formatCurrency(totalEncargoBacen)}
                 </td>
               </tr>
