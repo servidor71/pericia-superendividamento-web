@@ -83,5 +83,7 @@ export const initialContracts: Contract[] = [];
 // 7. Quesitos Periciais Inicial Limpo
 export const initialQuesitos: QuesitoPericial[] = [];
 
-// 8. Tabela de Índices Monetários Inicial Limpa
-export const initialMonetaryIndices: MonetaryIndexItem[] = [];
+import { defaultMonetaryIndices } from './services/monetaryIndices';
+
+// 8. Tabela de Índices Monetários Inicial
+export const initialMonetaryIndices: MonetaryIndexItem[] = defaultMonetaryIndices;

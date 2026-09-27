@@ -184,8 +184,10 @@ export interface QuesitoPericial {
 export interface MonetaryIndexItem {
   id: string;
   competencia: string; // Ex: "01/2025" ou "2025-01"
+  numeroIndiceInpc?: number; // Ex: 6816.54 (Número Índice INPC IBGE)
   indiceInpcMes: number; // Ex: 0.57 (% a.m.)
   fatorInpcAcumulado7Casas: number; // Ex: 1.0160724
+  numeroIndiceIpca?: number; // Ex: 7108.74 (Número Índice IPCA IBGE)
   indiceIpcaMes: number; // Ex: 0.42 (% a.m.)
   fatorIpcaAcumulado7Casas: number; // Ex: 1.0210543
   fonte: string; // Ex: "IBGE / Tabela Bacen 433"

@@ -3,6 +3,7 @@ import { Clipboard, Trash2, RefreshCw, CheckCircle2, Sparkles, Database } from '
 import * as XLSX from 'xlsx';
 import type { MonetaryIndexItem, Contract } from '../types';
 import { initialMonetaryIndices } from '../mockData';
+import { recalculateIndicesSeries, syncContractsWithNumeroIndice } from '../services/monetaryIndices';
 
 interface ModuleImportacaoIndicesProps {
   contracts?: Contract[];
@@ -57,8 +58,10 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
     const newItem: MonetaryIndexItem = {
       id: `idx_custom_${Date.now()}`,
       competencia: ``,
+      numeroIndiceInpc: 0.0,
       indiceInpcMes: 0.0,
       fatorInpcAcumulado7Casas: 1.0,
+      numeroIndiceIpca: 0.0,
       indiceIpcaMes: 0.0,
       fatorIpcaAcumulado7Casas: 1.0,
       fonte: 'Manual',
@@ -78,52 +81,25 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
     }
   };
 
-  // Recálculo automático da série multiplicativa acumulada de fatores de 7 casas decimais
+  // Recálculo automático dos Fatores Acumulados de 7 casas decimais via NÚMERO ÍNDICE (Mês Atual / Mês Anterior)
   const handleRecalculateAccumulatedFactors = () => {
-    let acumInpc = 1.0;
-    let acumIpca = 1.0;
-
-    const recalculated = indices.map((item) => {
-      const taxaInpc = (item.indiceInpcMes || 0) / 100;
-      const taxaIpca = (item.indiceIpcaMes || 0) / 100;
-
-      acumInpc = acumInpc * (1 + taxaInpc);
-      acumIpca = acumIpca * (1 + taxaIpca);
-
-      return {
-        ...item,
-        fatorInpcAcumulado7Casas: parseFloat(acumInpc.toFixed(7)),
-        fatorIpcaAcumulado7Casas: parseFloat(acumIpca.toFixed(7)),
-      };
-    });
-
+    const recalculated = recalculateIndicesSeries(indices);
     updateIndices(recalculated);
-    setSyncSuccessMessage('Fatores acumulados de 7 casas decimais recalculados com sucesso para toda a série histórica!');
+    setSyncSuccessMessage('Fatores acumulados (7 casas) recalculados pela divisão do NÚMERO ÍNDICE (Mês Atual / Mês Anterior)!');
     setTimeout(() => setSyncSuccessMessage(null), 5000);
   };
 
-  // Sincronização direta dos Fatores com os Contratos Bancários da Perícia
+  // Sincronização direta dos Fatores com os Contratos Bancários da Perícia via NÚMERO ÍNDICE
   const handleSyncFactorsWithContracts = () => {
     if (!contracts.length || !onContractsChange) {
-      setSyncSuccessMessage('Tabela atualizada! (Nenhum contrato ativo cadastrado no momento para sincronizar).');
+      setSyncSuccessMessage('Tabela atualizada! (Nenhum contrato ativo cadastrado para sincronizar).');
       setTimeout(() => setSyncSuccessMessage(null), 4000);
       return;
     }
 
-    const latestIndex = indices[indices.length - 1];
-    const defaultFatorInpc = latestIndex ? latestIndex.fatorInpcAcumulado7Casas : 1.0;
-    const defaultFatorIpca = latestIndex ? latestIndex.fatorIpcaAcumulado7Casas : 1.0;
-
-    const updatedContracts = contracts.map(c => {
-      const fatorToApply = c.tipoIndiceCorrecao === 'IPCA' ? defaultFatorIpca : defaultFatorInpc;
-      return {
-        ...c,
-        fatorCorrecao7Casas: fatorToApply,
-      };
-    });
-
+    const updatedContracts = syncContractsWithNumeroIndice(contracts, indices);
     onContractsChange(updatedContracts);
-    setSyncSuccessMessage(`Sincronização Concluída! Fatores de correção (7 casas) atualizados em todos os ${contracts.length} contratos da perícia!`);
+    setSyncSuccessMessage(`Sincronização Concluída! Fatores INPC/IPCA recalculados pela fórmula NÚMERO ÍNDICE (Mês Atual / Mês Anterior à Ref) em todos os ${contracts.length} contratos!`);
     setTimeout(() => setSyncSuccessMessage(null), 5000);
   };
 
@@ -343,20 +319,22 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
           <table className="w-full text-left border-collapse text-xs min-w-[900px]">
             <thead>
               <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] border-b border-slate-300">
-                <th className="py-3 px-4 text-center border-r border-slate-200 w-2/12">Competência (Mês/Ano)</th>
-                <th className="py-3 px-4 text-center border-r border-slate-200 w-2/12">INPC Mensal (%)</th>
-                <th className="py-3 px-4 text-center border-r border-slate-200 w-2/12">Fator INPC Acumulado</th>
-                <th className="py-3 px-4 text-center border-r border-slate-200 w-2/12">IPCA Mensal (%)</th>
-                <th className="py-3 px-4 text-center border-r border-slate-200 w-2/12">Fator IPCA Acumulado</th>
-                <th className="py-3 px-4 border-r border-slate-200 w-2/12">Fonte / Referência</th>
-                {isEditing && <th className="py-3 px-2 text-center w-1/12 no-print">Ações</th>}
+                <th className="py-3 px-3 text-center border-r border-slate-200">Competência</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200 bg-amber-50/50">NÚMERO ÍNDICE (INPC)</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200">INPC Mensal (%)</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200 font-black text-blue-900">Fator INPC Acumulado</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200 bg-emerald-50/50">NÚMERO ÍNDICE (IPCA)</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200">IPCA Mensal (%)</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200 font-black text-emerald-900">Fator IPCA Acumulado</th>
+                <th className="py-3 px-3 border-r border-slate-200">Fonte / Referência</th>
+                {isEditing && <th className="py-3 px-2 text-center no-print">Ações</th>}
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-200 font-normal bg-white text-slate-900">
               {indices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={9} className="py-12 text-center text-slate-500 font-medium">
                     <p className="text-sm font-bold text-slate-700 mb-1">Nenhum índice monetário cadastrado nesta série.</p>
                     <p className="text-xs text-slate-500">Utilize a caixa de importação acima para carregar um arquivo Excel/CSV ou clique no botão "+ Adicionar Linha".</p>
                   </td>
@@ -366,73 +344,105 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                 <tr key={item.id} className="hover:bg-slate-50 transition-colors text-slate-800">
                   
                   {/* Competência */}
-                  <td className="py-2.5 px-4 text-center font-mono font-bold text-slate-900 border-r border-slate-200">
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-slate-900 border-r border-slate-200">
                     {isEditing ? (
                       <input
                         type="text"
                         value={item.competencia}
                         onChange={(e) => handleUpdateItem(item.id, 'competencia', e.target.value)}
-                        className="w-24 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-bold text-slate-900 bg-white text-xs"
+                        className="w-20 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-bold text-slate-900 bg-white text-xs"
                       />
                     ) : (
                       item.competencia
                     )}
                   </td>
 
+                  {/* Número Índice INPC */}
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-amber-900 border-r border-slate-200 bg-amber-50/30">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.numeroIndiceInpc || ''}
+                        onChange={(e) => handleUpdateItem(item.id, 'numeroIndiceInpc', parseFloat(e.target.value) || 0)}
+                        placeholder="ex: 6816.54"
+                        className="w-24 text-center px-1.5 py-0.5 border border-amber-300 rounded font-mono font-bold text-amber-900 bg-white text-xs"
+                      />
+                    ) : (
+                      (item.numeroIndiceInpc || 0).toFixed(2).replace('.', ',')
+                    )}
+                  </td>
+
                   {/* INPC Mensal % */}
-                  <td className="py-2.5 px-4 text-center font-mono text-slate-900 border-r border-slate-200">
+                  <td className="py-2.5 px-3 text-center font-mono text-slate-900 border-r border-slate-200">
                     {isEditing ? (
                       <input
                         type="number"
                         step="0.01"
                         value={item.indiceInpcMes}
                         onChange={(e) => handleUpdateItem(item.id, 'indiceInpcMes', parseFloat(e.target.value) || 0)}
-                        className="w-20 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
+                        className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
                       />
                     ) : (
                       `${item.indiceInpcMes.toFixed(2).replace('.', ',')}%`
                     )}
                   </td>
 
-                  {/* Fator INPC */}
-                  <td className="py-2.5 px-4 text-center font-mono font-black text-blue-900 border-r border-slate-200">
+                  {/* Fator INPC Acumulado */}
+                  <td className="py-2.5 px-3 text-center font-mono font-black text-blue-900 border-r border-slate-200">
                     {isEditing ? (
                       <input
                         type="number"
                         step="0.0000001"
                         value={item.fatorInpcAcumulado7Casas}
                         onChange={(e) => handleUpdateItem(item.id, 'fatorInpcAcumulado7Casas', parseFloat(e.target.value) || 1.0)}
-                        className="w-28 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-black text-blue-900 bg-white text-xs"
+                        className="w-24 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-black text-blue-900 bg-white text-xs"
                       />
                     ) : (
                       item.fatorInpcAcumulado7Casas.toFixed(7)
                     )}
                   </td>
 
+                  {/* Número Índice IPCA */}
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-emerald-900 border-r border-slate-200 bg-emerald-50/30">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.numeroIndiceIpca || ''}
+                        onChange={(e) => handleUpdateItem(item.id, 'numeroIndiceIpca', parseFloat(e.target.value) || 0)}
+                        placeholder="ex: 7108.74"
+                        className="w-24 text-center px-1.5 py-0.5 border border-emerald-300 rounded font-mono font-bold text-emerald-900 bg-white text-xs"
+                      />
+                    ) : (
+                      (item.numeroIndiceIpca || 0).toFixed(2).replace('.', ',')
+                    )}
+                  </td>
+
                   {/* IPCA Mensal % */}
-                  <td className="py-2.5 px-4 text-center font-mono text-slate-900 border-r border-slate-200">
+                  <td className="py-2.5 px-3 text-center font-mono text-slate-900 border-r border-slate-200">
                     {isEditing ? (
                       <input
                         type="number"
                         step="0.01"
                         value={item.indiceIpcaMes}
                         onChange={(e) => handleUpdateItem(item.id, 'indiceIpcaMes', parseFloat(e.target.value) || 0)}
-                        className="w-20 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
+                        className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
                       />
                     ) : (
                       `${item.indiceIpcaMes.toFixed(2).replace('.', ',')}%`
                     )}
                   </td>
 
-                  {/* Fator IPCA */}
-                  <td className="py-2.5 px-4 text-center font-mono font-black text-emerald-800 border-r border-slate-200">
+                  {/* Fator IPCA Acumulado */}
+                  <td className="py-2.5 px-3 text-center font-mono font-black text-emerald-800 border-r border-slate-200">
                     {isEditing ? (
                       <input
                         type="number"
                         step="0.0000001"
                         value={item.fatorIpcaAcumulado7Casas}
                         onChange={(e) => handleUpdateItem(item.id, 'fatorIpcaAcumulado7Casas', parseFloat(e.target.value) || 1.0)}
-                        className="w-28 text-center px-2 py-0.5 border border-slate-300 rounded font-mono font-black text-emerald-800 bg-white text-xs"
+                        className="w-24 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-black text-emerald-800 bg-white text-xs"
                       />
                     ) : (
                       item.fatorIpcaAcumulado7Casas.toFixed(7)
@@ -440,13 +450,13 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                   </td>
 
                   {/* Fonte */}
-                  <td className="py-2.5 px-4 font-normal text-slate-700 border-r border-slate-200">
+                  <td className="py-2.5 px-3 font-normal text-slate-700 border-r border-slate-200">
                     {isEditing ? (
                       <input
                         type="text"
                         value={item.fonte}
                         onChange={(e) => handleUpdateItem(item.id, 'fonte', e.target.value)}
-                        className="w-full px-2 py-0.5 border border-slate-300 rounded text-slate-800 bg-white text-xs"
+                        className="w-full px-1.5 py-0.5 border border-slate-300 rounded text-slate-800 bg-white text-xs"
                       />
                     ) : (
                       item.fonte

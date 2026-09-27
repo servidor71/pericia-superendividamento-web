@@ -35,8 +35,8 @@ import { Module5ConsolidacaoPassivo } from './components/Module5ConsolidacaoPass
 import { Module6PlanosRepactuacao } from './components/Module6PlanosRepactuacao';
 import { Module7LaudoExportacoes } from './components/Module7LaudoExportacoes';
 
-import type { ProfessionalProfile, ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProcessDocumentItem, SubscriptionConfig, SubscriptionPlanType } from './types';
-import { initialProfessionalProfile, initialProcessData, initialIncomeData, initialExpenseData, initialContracts, initialQuesitos, initialProcessDocuments } from './mockData';
+import type { ProfessionalProfile, ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProcessDocumentItem, SubscriptionConfig, SubscriptionPlanType, MonetaryIndexItem } from './types';
+import { initialProfessionalProfile, initialProcessData, initialIncomeData, initialExpenseData, initialContracts, initialQuesitos, initialProcessDocuments, initialMonetaryIndices } from './mockData';
 import { calculateFinancialSummary } from './services/calculations';
 import { useEffect } from 'react';
 import { exportToExcel, exportJSONBackup } from './services/exporters';
@@ -94,6 +94,7 @@ export function App() {
   const [expenses, setExpenses] = useState<ExpenseData>(initialExpenseData);
   const [contracts, setContracts] = useState<Contract[]>(initialContracts);
   const [quesitos] = useState<QuesitoPericial[]>(initialQuesitos);
+  const [monetaryIndices, setMonetaryIndices] = useState<MonetaryIndexItem[]>(initialMonetaryIndices);
   const [taxaJurosPlano, setTaxaJurosPlano] = useState<number>(1.63);
 
   // Subscription Plan State (Rigorously Enforced Features)
@@ -558,7 +559,12 @@ export function App() {
               )}
 
               {activeTab === 8 && (
-                <Module4INPCBACEN contracts={contracts} onContractsChange={setContracts} />
+                <Module4INPCBACEN
+                  contracts={contracts}
+                  onContractsChange={setContracts}
+                  indicesList={monetaryIndices}
+                  onIndicesChange={setMonetaryIndices}
+                />
               )}
 
               {activeTab === 9 && (
