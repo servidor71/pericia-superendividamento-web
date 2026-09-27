@@ -422,11 +422,10 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                       <td className="py-2.5 px-3 text-center font-mono font-bold text-amber-950 border-r border-slate-200 bg-amber-50/40">
                         {isEditing ? (
                           <input
-                            type="number"
-                            step="0.01"
-                            value={item.numeroIndiceInpc || ''}
-                            onChange={(e) => handleUpdateItem(item.id, 'numeroIndiceInpc', parseFloat(e.target.value) || 0)}
-                            placeholder="ex: 6816.54"
+                            type="text"
+                            value={formatCommaTwoDigits(item.numeroIndiceInpc)}
+                            onChange={(e) => handleUpdateItem(item.id, 'numeroIndiceInpc', parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')) || 0)}
+                            placeholder="ex: 6816,54"
                             className="w-24 text-center px-1.5 py-0.5 border border-amber-300 rounded font-mono font-bold text-amber-900 bg-white text-xs"
                           />
                         ) : (
@@ -437,13 +436,15 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                       {/* INPC Mensal % */}
                       <td className="py-2.5 px-3 text-center font-mono text-slate-900 border-r border-slate-200">
                         {isEditing ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.indiceInpcMes}
-                            onChange={(e) => handleUpdateItem(item.id, 'indiceInpcMes', parseFloat(e.target.value) || 0)}
-                            className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
-                          />
+                          <div className="flex items-center justify-center gap-0.5">
+                            <input
+                              type="text"
+                              value={formatCommaTwoDigits(item.indiceInpcMes)}
+                              onChange={(e) => handleUpdateItem(item.id, 'indiceInpcMes', parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')) || 0)}
+                              className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
+                            />
+                            <span className="text-[10px] text-slate-500 font-normal">%</span>
+                          </div>
                         ) : (
                           `${formatCommaTwoDigits(item.indiceInpcMes)}%`
                         )}
@@ -468,11 +469,10 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                       <td className="py-2.5 px-3 text-center font-mono font-bold text-emerald-950 border-r border-slate-200 bg-emerald-50/40">
                         {isEditing ? (
                           <input
-                            type="number"
-                            step="0.01"
-                            value={item.numeroIndiceIpca || ''}
-                            onChange={(e) => handleUpdateItem(item.id, 'numeroIndiceIpca', parseFloat(e.target.value) || 0)}
-                            placeholder="ex: 7108.74"
+                            type="text"
+                            value={formatCommaTwoDigits(item.numeroIndiceIpca)}
+                            onChange={(e) => handleUpdateItem(item.id, 'numeroIndiceIpca', parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')) || 0)}
+                            placeholder="ex: 7108,74"
                             className="w-24 text-center px-1.5 py-0.5 border border-emerald-300 rounded font-mono font-bold text-emerald-900 bg-white text-xs"
                           />
                         ) : (
@@ -483,13 +483,15 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                       {/* IPCA Mensal % */}
                       <td className="py-2.5 px-3 text-center font-mono text-slate-900 border-r border-slate-200">
                         {isEditing ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.indiceIpcaMes}
-                            onChange={(e) => handleUpdateItem(item.id, 'indiceIpcaMes', parseFloat(e.target.value) || 0)}
-                            className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
-                          />
+                          <div className="flex items-center justify-center gap-0.5">
+                            <input
+                              type="text"
+                              value={formatCommaTwoDigits(item.indiceIpcaMes)}
+                              onChange={(e) => handleUpdateItem(item.id, 'indiceIpcaMes', parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')) || 0)}
+                              className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
+                            />
+                            <span className="text-[10px] text-slate-500 font-normal">%</span>
+                          </div>
                         ) : (
                           `${formatCommaTwoDigits(item.indiceIpcaMes)}%`
                         )}
