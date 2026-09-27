@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, BadgeCheck, Upload, Filter, Clipboard } from 'lucide-react';
 import type { Contract, MonetaryIndexItem } from '../types';
 import { initialContracts } from '../mockData';
-import { formatCurrency, getBacenStatus, getSaldoDevedorModulo6, getDataRefUltimaParcelaModulo6 } from '../services/calculations';
+import { formatCurrency, getBacenStatus, getSaldoDevedorModulo6, getDataRefUltimaParcelaModulo6, formatDateBR } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 import { ModuleImportacaoIndices } from './ModuleImportacaoIndices';
 
@@ -356,21 +356,10 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                           <span className="text-[10px] text-slate-500 font-mono font-normal">{c.numeroContrato}</span>
                         </td>
                         <td className="py-2.5 px-3 border-r border-slate-200 font-mono text-center font-normal text-slate-700">
-                          <input
-                            type="date"
-                            disabled={!isEditing}
-                            value={c.dataContrato || '2024-01-01'}
-                            onChange={(e) => handleUpdate(c.id, 'dataContrato', e.target.value)}
-                            className="px-1.5 py-0.5 border border-slate-300 rounded font-mono text-[11px] bg-white disabled:bg-slate-100 text-slate-800 font-normal"
-                          />
+                          {c.dataContrato ? formatDateBR(c.dataContrato) : '—'}
                         </td>
-                        <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-900">
-                          <CurrencyInput
-                            disabled={!isEditing}
-                            value={c.valorLiberadoContrato}
-                            onChange={(val) => handleUpdate(c.id, 'valorLiberadoContrato', val)}
-                            className="w-28 text-right px-2 py-0.5 border border-slate-300 rounded font-normal text-slate-800 text-[11px] bg-white disabled:bg-slate-100"
-                          />
+                        <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-900 font-mono">
+                          {formatCurrency(c.valorLiberadoContrato || 0)}
                         </td>
                         
                         {/* Fator sozinho na célula sem dropdown repetido */}
@@ -388,16 +377,8 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                         <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-800 font-mono">
                           {formatCurrency(vlrCorrigido)}
                         </td>
-                        <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-800">
-                          <input
-                            type="number"
-                            step="0.01"
-                            disabled={!isEditing}
-                            value={c.taxaJurosMes !== undefined && c.taxaJurosMes !== null ? Number(c.taxaJurosMes).toFixed(2) : '0.00'}
-                            onChange={(e) => handleUpdate(c.id, 'taxaJurosMes', parseFloat(e.target.value) || 0)}
-                            className="w-16 text-right px-1.5 py-0.5 border border-slate-300 rounded font-normal text-slate-800 text-[11px] bg-white disabled:bg-slate-100"
-                          />
-                          <span className="text-[10px] text-slate-500 font-normal ml-0.5">%</span>
+                        <td className="py-2.5 px-3 text-right border-r border-slate-200 font-normal text-slate-800 font-mono">
+                          {(Number(c.taxaJurosMes) || 0).toFixed(2)}%
                         </td>
                         <td className="py-2.5 px-3 text-right border-r border-slate-200">
                           <input
