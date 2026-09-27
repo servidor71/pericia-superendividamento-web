@@ -464,11 +464,14 @@ export function calculateIRR(cashFlows: number[], guess = 0.01): number {
 /**
  * Análise de Evolução dos Contratos - Valores Contratados x Recebidos (Tabela da Imagem do Usuário)
  */
-export function calculateContractEvolution(contracts: Contract[], capacidadeMensal: number) {
+export function calculateContractEvolution(contracts: Contract[], capacidadeMensal: number = 0, taxaJurosAm: number = 1.63) {
+  // Apura o Plano de Pagamento Compulsório do Módulo 18 (Rateio Proporcional Price 60x)
+  const plan18 = calculateModulo18PricePlan(contracts, taxaJurosAm, 60);
   const plan60x = calculateProportional60xPlan(contracts, capacidadeMensal);
 
   return contracts.map((c, idx) => {
-    const pmt60 = plan60x[idx]?.parcelaRepactuadaPMT || 0;
+    // PRESTAÇÃO REPACTUADA extraída da coluna "PMT Mensal" do Módulo 18
+    const pmt60 = plan18.rows[idx]?.pmtMensalIndividual || plan60x[idx]?.parcelaRepactuadaPMT || 0;
     const qtdPagas = c.qtdParcelasPagas || 0;
     const qtdPagar = c.qtdParcelasRestantes || 60;
     const valorLiberado = c.valorLiberadoContrato || 0;

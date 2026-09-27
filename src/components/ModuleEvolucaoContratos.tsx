@@ -7,14 +7,15 @@ interface ModuleEvolucaoProps {
   income: IncomeData;
   expenses: ExpenseData;
   contracts: Contract[];
+  taxaJurosAm?: number;
 }
 
-export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income, expenses, contracts }) => {
+export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income, expenses, contracts, taxaJurosAm = 1.63 }) => {
   const [taxaSelicAa, setTaxaSelicAa] = useState<number>(14.25);
   const [isEditing, setIsEditing] = useState(true);
 
   const summary = calculateFinancialSummary(income, expenses, contracts);
-  const evolution = calculateContractEvolution(contracts, summary.capacidadeMensalPlano);
+  const evolution = calculateContractEvolution(contracts, summary.capacidadeMensalPlano, taxaJurosAm);
 
   // Totais Consolidados (helper para mapeamento consistente)
   const totais = {
