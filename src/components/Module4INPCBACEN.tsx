@@ -98,11 +98,11 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
         </div>
 
         {/* Sub-Tabs + Action Buttons on the exact same row */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-nowrap items-center gap-1.5 shrink-0 overflow-x-auto pb-0.5 max-w-full">
           <div className="flex bg-white p-1 rounded-xl border border-[#DCD8CD] gap-1 shrink-0">
             <button
               onClick={() => setActiveSubTab('liberado')}
-              className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeSubTab === 'liberado'
                   ? 'bg-[#1C4E5E] text-white shadow-2xs'
                   : 'text-slate-700 hover:bg-slate-100'
@@ -112,7 +112,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
             </button>
             <button
               onClick={() => setActiveSubTab('saldoDevedor')}
-              className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeSubTab === 'saldoDevedor'
                   ? 'bg-[#2E7D62] text-white shadow-2xs'
                   : 'text-slate-700 hover:bg-slate-100'
@@ -122,7 +122,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
             </button>
             <button
               onClick={() => setActiveSubTab('tabelaIndices')}
-              className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap shrink-0 ${
                 activeSubTab === 'tabelaIndices'
                   ? 'bg-[#1C4E5E] text-white shadow-2xs'
                   : 'text-slate-700 hover:bg-slate-100'
@@ -136,7 +136,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
           {activeSubTab === 'tabelaIndices' && (
             <>
               {/* File Upload Button */}
-              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1C4E5E] hover:bg-[#153E4B] text-white font-black text-xs rounded-xl shadow-2xs border border-[#1C4E5E] transition-all cursor-pointer">
+              <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#1C4E5E] hover:bg-[#153E4B] text-white font-black text-xs rounded-xl shadow-2xs border border-[#1C4E5E] transition-all cursor-pointer whitespace-nowrap shrink-0">
                 <Upload className="w-3.5 h-3.5 text-white" />
                 <span>Importar (CSV / XLS)</span>
                 <input
@@ -150,7 +150,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
               {/* Paste Excel Button */}
               <button
                 onClick={() => indicesActions?.openPasteModal()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-700 font-bold text-xs rounded-xl border border-[#DCD8CD] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white text-slate-700 font-bold text-xs rounded-xl border border-[#DCD8CD] transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Clipboard className="w-3.5 h-3.5 text-[#1C4E5E]" />
                 <span>Colar Excel</span>
@@ -158,7 +158,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
 
               <button
                 onClick={() => indicesActions?.handleAddRow()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-white bg-[#1C4E5E] hover:bg-[#153E4B] border border-[#1C4E5E] rounded-xl transition-all shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black text-white bg-[#1C4E5E] hover:bg-[#153E4B] border border-[#1C4E5E] rounded-xl transition-all shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
               >
                 <span>+ Mês/Índice</span>
               </button>
@@ -169,7 +169,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
           <button
             type="button"
             onClick={() => setIsEditing(!isEditing)}
-            className={`px-3.5 py-1 text-xs font-black rounded-full transition-all cursor-pointer shadow-2xs border ${
+            className={`px-3 py-1 text-xs font-black rounded-full transition-all cursor-pointer shadow-2xs border whitespace-nowrap shrink-0 ${
               isEditing ? 'bg-amber-400 hover:bg-amber-500 text-slate-950 border-amber-500' : 'bg-amber-300 hover:bg-amber-400 text-slate-900 border-amber-400'
             }`}
           >
@@ -188,7 +188,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                 indicesActions.handleClearIndices();
               }
             }}
-            className="px-3.5 py-1 text-xs font-bold bg-[#FDF2F2] hover:bg-[#FDE8E8] text-[#9B1C1C] border border-[#F8B4B4] rounded-full transition-all cursor-pointer shadow-2xs"
+            className="px-3 py-1 text-xs font-bold bg-[#FDF2F2] hover:bg-[#FDE8E8] text-[#9B1C1C] border border-[#F8B4B4] rounded-full transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
           >
             <span>Limpar</span>
           </button>
@@ -207,7 +207,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                 }
               }
             }}
-            className="px-3.5 py-1 text-xs font-bold bg-red-600 hover:bg-red-700 text-white border border-red-700 rounded-full transition-all cursor-pointer shadow-2xs"
+            className="px-3 py-1 text-xs font-bold bg-red-600 hover:bg-red-700 text-white border border-red-700 rounded-full transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
           >
             <span>Deletar</span>
           </button>
@@ -222,7 +222,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
                 handleReset();
               }
             }}
-            className="px-3.5 py-1 text-xs font-bold bg-white hover:bg-slate-100 text-[#1C4E5E] border border-[#DCD8CD] rounded-full transition-all cursor-pointer shadow-2xs"
+            className="px-3 py-1 text-xs font-bold bg-white hover:bg-slate-100 text-[#1C4E5E] border border-[#DCD8CD] rounded-full transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
           >
             <span>Restaurar</span>
           </button>
@@ -231,7 +231,7 @@ export const Module4INPCBACEN: React.FC<Module4Props> = ({
           <button
             type="button"
             onClick={() => alert(`Dados de Atualização Monetária (${activeSubTab === 'liberado' ? 'Aba 1: Valor Liberado' : activeSubTab === 'saldoDevedor' ? 'Aba 2: Saldo Devedor' : 'Aba 3: Tabela Índices'}) salvos com sucesso!`)}
-            className="px-4 py-1 text-xs font-black bg-[#2E7D62] hover:bg-[#23624D] text-white border border-[#2E7D62] rounded-full transition-all cursor-pointer shadow-2xs"
+            className="px-3.5 py-1 text-xs font-black bg-[#2E7D62] hover:bg-[#23624D] text-white border border-[#2E7D62] rounded-full transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
           >
             <span>Salvar</span>
           </button>

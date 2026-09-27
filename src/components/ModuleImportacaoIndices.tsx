@@ -5,6 +5,15 @@ import type { MonetaryIndexItem, Contract } from '../types';
 import { initialMonetaryIndices } from '../mockData';
 import { syncContractsWithNumeroIndice, OFFICIAL_IBGE_SOURCE, parseIBGESerieHistoricaRows, sortAndDeduplicateIndices } from '../services/monetaryIndices';
 
+function formatCommaTwoDigits(val: number | undefined | null): string {
+  if (val === undefined || val === null || isNaN(val)) return '0,00';
+  let num = val;
+  if (Math.abs(num) >= 100 && Number.isInteger(num)) {
+    num = num / 100;
+  }
+  return num.toFixed(2).replace('.', ',');
+}
+
 interface ModuleImportacaoIndicesProps {
   contracts?: Contract[];
   onContractsChange?: (updated: Contract[]) => void;
@@ -359,10 +368,10 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                 <th className="py-3 px-3 text-center border-r border-slate-200">Competência</th>
                 <th className="py-3 px-3 text-center border-r border-slate-200 bg-amber-50/70 font-black text-amber-950">NÚMERO ÍNDICE (INPC)</th>
                 <th className="py-3 px-3 text-center border-r border-slate-200">INPC Mensal (%)</th>
-                <th className="py-3 px-3 text-center border-r border-slate-200 font-black text-blue-900">Fator INPC (7 Casas)</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200 font-black text-blue-900">FATOR INPC</th>
                 <th className="py-3 px-3 text-center border-r border-slate-200 bg-emerald-50/70 font-black text-emerald-950">NÚMERO ÍNDICE (IPCA)</th>
                 <th className="py-3 px-3 text-center border-r border-slate-200">IPCA Mensal (%)</th>
-                <th className="py-3 px-3 text-center border-r border-slate-200 font-black text-emerald-900">Fator IPCA (7 Casas)</th>
+                <th className="py-3 px-3 text-center border-r border-slate-200 font-black text-emerald-900">FATOR IPCA</th>
                 <th className="py-3 px-3 border-r border-slate-200">Fonte da Série</th>
                 {isEditing && <th className="py-3 px-2 text-center no-print">Ações</th>}
               </tr>
@@ -421,7 +430,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                             className="w-24 text-center px-1.5 py-0.5 border border-amber-300 rounded font-mono font-bold text-amber-900 bg-white text-xs"
                           />
                         ) : (
-                          (item.numeroIndiceInpc || 0).toFixed(2).replace('.', ',')
+                          formatCommaTwoDigits(item.numeroIndiceInpc)
                         )}
                       </td>
 
@@ -436,7 +445,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                             className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
                           />
                         ) : (
-                          `${item.indiceInpcMes.toFixed(2).replace('.', ',')}%`
+                          `${formatCommaTwoDigits(item.indiceInpcMes)}%`
                         )}
                       </td>
 
@@ -451,7 +460,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                             className="w-24 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-black text-blue-900 bg-white text-xs"
                           />
                         ) : (
-                          item.fatorInpcAcumulado7Casas.toFixed(7)
+                          (item.fatorInpcAcumulado7Casas || 1.0).toFixed(7).replace('.', ',')
                         )}
                       </td>
 
@@ -467,7 +476,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                             className="w-24 text-center px-1.5 py-0.5 border border-emerald-300 rounded font-mono font-bold text-emerald-900 bg-white text-xs"
                           />
                         ) : (
-                          (item.numeroIndiceIpca || 0).toFixed(2).replace('.', ',')
+                          formatCommaTwoDigits(item.numeroIndiceIpca)
                         )}
                       </td>
 
@@ -482,7 +491,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                             className="w-16 text-center px-1 py-0.5 border border-slate-300 rounded font-mono font-normal text-slate-900 bg-white text-xs"
                           />
                         ) : (
-                          `${item.indiceIpcaMes.toFixed(2).replace('.', ',')}%`
+                          `${formatCommaTwoDigits(item.indiceIpcaMes)}%`
                         )}
                       </td>
 
@@ -497,7 +506,7 @@ export const ModuleImportacaoIndices: React.FC<ModuleImportacaoIndicesProps> = (
                             className="w-24 text-center px-1.5 py-0.5 border border-slate-300 rounded font-mono font-black text-emerald-800 bg-white text-xs"
                           />
                         ) : (
-                          item.fatorIpcaAcumulado7Casas.toFixed(7)
+                          (item.fatorIpcaAcumulado7Casas || 1.0).toFixed(7).replace('.', ',')
                         )}
                       </td>
 
