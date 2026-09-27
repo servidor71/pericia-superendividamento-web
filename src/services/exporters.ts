@@ -1180,6 +1180,9 @@ export function exportToExcel(
         { value: 'Credor / Contrato', align: 'left' },
         { value: 'Qtd. Pagas', align: 'center' },
         { value: 'Qtd. Pagar', align: 'center' },
+        { value: 'QTDA DE PRESTAÇÕES REPACTUADAS', align: 'center' },
+        { value: 'PRESTAÇÃO CONTRATADA', align: 'right' },
+        { value: 'PRESTAÇÃO REPACTUADA', align: 'right' },
         { value: 'Capital Contratado (R$)', align: 'right' },
         { value: 'Total Já Pago (R$)', align: 'right' },
         { value: 'Total Repactuado 60m (R$)', align: 'right' },
@@ -1197,13 +1200,16 @@ export function exportToExcel(
           { value: `${e.credor} (${e.numeroContrato})` },
           { value: e.qtdPagas, formula: `='5. Contratos Bancários'!K${r}`, align: 'center' as const },
           { value: e.qtdPagar, align: 'center' as const },
+          { value: e.qtdRepactuadas || 60, align: 'center' as const },
+          { value: e.prestacaoContratada, formula: `='5. Contratos Bancários'!M${r}`, styleType: 'currency' as const },
+          { value: e.prestacaoRepactuada, formula: `='17. Plano Rateio 60X'!E${r}`, styleType: 'currency' as const },
           { value: e.valorLiberado, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
           { value: e.totalPrestacoesJaPagas, formula: `='13. Total Pago Contrato'!E${r}`, styleType: 'currency' as const },
           { value: e.totalRepactuado60m, formula: `='17. Plano Rateio 60X'!F${r}`, styleType: 'currency' as const },
-          { value: e.totalPagoJaPagasERepactuadas, formula: `=E${r}+F${r}`, styleType: 'currency' as const },
-          { value: e.totalPagoAcimaDoValorLiberado, formula: `=G${r}-D${r}`, styleType: 'currency' as const },
-          { value: e.tirAmPercent / 100, formula: `=(G${r}/D${r})^(1/(B${r}+C${r}))-1`, styleType: 'percent' as const },
-          { value: e.tirAaPercent / 100, formula: `=(1+I${r})^12-1`, styleType: 'percent' as const }
+          { value: e.totalPagoJaPagasERepactuadas, formula: `=H${r}+I${r}`, styleType: 'currency' as const },
+          { value: e.totalPagoAcimaDoValorLiberado, formula: `=J${r}-G${r}`, styleType: 'currency' as const },
+          { value: e.tirAmPercent / 100, formula: `=(J${r}/G${r})^(1/(B${r}+C${r}))-1`, styleType: 'percent' as const },
+          { value: e.tirAaPercent / 100, formula: `=(1+L${r})^12-1`, styleType: 'percent' as const }
         ]
       };
     }),
@@ -1213,17 +1219,20 @@ export function exportToExcel(
         { value: 'TOTAL GERAL CONSOLIDADO' },
         { value: '' },
         { value: '' },
-        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPrestacoesJaPagas, 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
-        { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), formula: `=SUM(G5:G${4 + N_contracts})`, styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), formula: `=SUM(H5:H${4 + N_contracts})`, styleType: 'currency' },
+        { value: '' },
+        { value: evolution.reduce((a, r) => a + (r.prestacaoContratada || 0), 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + (r.prestacaoRepactuada || 0), 0), formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), formula: `=SUM(G5:G${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPrestacoesJaPagas, 0), formula: `=SUM(H5:H${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(I5:I${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), formula: `=SUM(J5:J${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), formula: `=SUM(K5:K${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: '' }
       ]
     }
   ];
-  const sheet12 = buildStyledSheet('12. Evolução Contratos', 'MÓDULO 12 — ANÁLISE DA EVOLUÇÃO DOS CONTRATOS (CONTRATADO X RECEBIDO)', aba12Rows, [30, 12, 12, 22, 22, 22, 25, 22, 15, 15]);
+  const sheet12 = buildStyledSheet('12. Evolução Contratos', 'MÓDULO 12 — ANÁLISE DA EVOLUÇÃO DOS CONTRATOS (CONTRATADO X RECEBIDO)', aba12Rows, [30, 12, 12, 25, 20, 20, 22, 22, 22, 25, 22, 15, 15]);
   XLSX.utils.book_append_sheet(wb, sheet12.ws, sheet12.sheetName);
 
   // =============================================================

@@ -18,6 +18,8 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
 
   // Totais Consolidados (helper para mapeamento consistente)
   const totais = {
+    prestacaoContratada: evolution.reduce((acc, row) => acc + (row.prestacaoContratada || 0), 0),
+    prestacaoRepactuada: evolution.reduce((acc, row) => acc + (row.prestacaoRepactuada || 0), 0),
     valorLiberado: evolution.reduce((acc, row) => acc + row.valorLiberado, 0),
     valorLiberadoCorrigido: evolution.reduce((acc, row) => acc + row.valorLiberadoCorrigido, 0),
     totalPrestacoesJaPagas: evolution.reduce((acc, row) => acc + row.totalPrestacoesJaPagas, 0),
@@ -89,11 +91,14 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
       {/* Main Evolution Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden w-full">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs min-w-[1200px] bg-transparent">
+          <table className="w-full text-left border-collapse text-xs min-w-[1400px] bg-transparent">
             <thead>
               <tr className="bg-slate-100 text-slate-900 font-extrabold uppercase text-[10px] border-b border-slate-300">
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Qtda Prestações Já Pagas</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Qtda Prestações Pagar</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-emerald-800">QTDA DE PRESTAÇÕES REPACTUADAS</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center">PRESTAÇÃO CONTRATADA</th>
+                <th className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900">PRESTAÇÃO REPACTUADA</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Valor Contratado</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center whitespace-nowrap min-w-[170px]">Fator INPC / IPCA</th>
                 <th className="py-2.5 px-3 border-r border-slate-200 text-center">Valor Liberado Corrigido</th>
@@ -110,6 +115,9 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
                 <tr key={row.id} className="hover:bg-slate-50/50 transition-colors text-slate-800 font-normal">
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal">{row.qtdPagas}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-blue-900">{row.qtdPagar}</td>
+                  <td className="py-2.5 px-3 border-r border-slate-200 text-center font-bold text-emerald-800 font-mono">{row.qtdRepactuadas}</td>
+                  <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900 font-mono">{formatCurrency(row.prestacaoContratada)}</td>
+                  <td className="py-2.5 px-3 border-r border-slate-200 text-center font-bold text-blue-900 font-mono">{formatCurrency(row.prestacaoRepactuada)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{formatCurrency(row.valorLiberado)}</td>
                   <td className="py-2.5 px-3 border-r border-slate-200 text-center font-mono font-normal text-slate-800 whitespace-nowrap min-w-[170px]">
                     {format7Decimals(row.indice7Casas)} ({row.tipoIndice})
@@ -127,6 +135,9 @@ export const ModuleEvolucaoContratos: React.FC<ModuleEvolucaoProps> = ({ income,
             <tfoot>
               <tr className="bg-slate-100 text-slate-900 font-extrabold text-xs uppercase border-t-2 border-slate-300">
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black" colSpan={2}>TOT. CONSOLIDADO</td>
+                <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-emerald-800 font-mono">-</td>
+                <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black font-mono">{formatCurrency(totais.prestacaoContratada)}</td>
+                <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black text-blue-900 font-mono">{formatCurrency(totais.prestacaoRepactuada)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{formatCurrency(totais.valorLiberado)}</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">-</td>
                 <td className="py-2.5 px-3 border-r border-slate-200 text-center font-black">{formatCurrency(totais.valorLiberadoCorrigido)}</td>
