@@ -24,10 +24,10 @@ const COLORS = {
   BLUE_TEXT: '1E40AF',
 };
 
-// Common cell styles
+// Common cell styles - ALL FONTS SET TO CALIBRI SIZE 10
 const STYLES = {
   banner: {
-    font: { name: 'Arial', sz: 12, bold: true, color: { rgb: COLORS.WHITE } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: COLORS.WHITE } },
     fill: { fgColor: { rgb: COLORS.PRIMARY_TEAL } },
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     border: {
@@ -35,7 +35,7 @@ const STYLES = {
     }
   },
   sectionHeader: {
-    font: { name: 'Arial', sz: 10.5, bold: true, color: { rgb: COLORS.WHITE } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: COLORS.WHITE } },
     fill: { fgColor: { rgb: COLORS.SUBHEADER_TEAL } },
     alignment: { horizontal: 'left', vertical: 'center' },
     border: {
@@ -43,7 +43,7 @@ const STYLES = {
     }
   },
   tableHeader: {
-    font: { name: 'Arial', sz: 9.5, bold: true, color: { rgb: COLORS.WHITE } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: COLORS.WHITE } },
     fill: { fgColor: { rgb: COLORS.DARK_NAVY } },
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     border: {
@@ -54,7 +54,7 @@ const STYLES = {
     }
   },
   dataCellLeft: (isOdd: boolean) => ({
-    font: { name: 'Arial', sz: 9, color: { rgb: COLORS.DARK_NAVY } },
+    font: { name: 'Calibri', sz: 10, color: { rgb: COLORS.DARK_NAVY } },
     fill: { fgColor: { rgb: isOdd ? COLORS.ZEBRA_BG : COLORS.WHITE } },
     alignment: { horizontal: 'left', vertical: 'center' },
     border: {
@@ -65,7 +65,7 @@ const STYLES = {
     }
   }),
   dataCellRight: (isOdd: boolean) => ({
-    font: { name: 'Arial', sz: 9, color: { rgb: COLORS.DARK_NAVY } },
+    font: { name: 'Calibri', sz: 10, color: { rgb: COLORS.DARK_NAVY } },
     fill: { fgColor: { rgb: isOdd ? COLORS.ZEBRA_BG : COLORS.WHITE } },
     alignment: { horizontal: 'right', vertical: 'center' },
     border: {
@@ -76,7 +76,7 @@ const STYLES = {
     }
   }),
   dataCellCenter: (isOdd: boolean) => ({
-    font: { name: 'Arial', sz: 9, color: { rgb: COLORS.DARK_NAVY } },
+    font: { name: 'Calibri', sz: 10, color: { rgb: COLORS.DARK_NAVY } },
     fill: { fgColor: { rgb: isOdd ? COLORS.ZEBRA_BG : COLORS.WHITE } },
     alignment: { horizontal: 'center', vertical: 'center' },
     border: {
@@ -87,7 +87,7 @@ const STYLES = {
     }
   }),
   totalRowLeft: {
-    font: { name: 'Arial', sz: 9.5, bold: true, color: { rgb: COLORS.TOTAL_TEXT } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: COLORS.TOTAL_TEXT } },
     fill: { fgColor: { rgb: COLORS.TOTAL_BG } },
     alignment: { horizontal: 'left', vertical: 'center' },
     border: {
@@ -98,7 +98,7 @@ const STYLES = {
     }
   },
   totalRowRight: {
-    font: { name: 'Arial', sz: 9.5, bold: true, color: { rgb: COLORS.TOTAL_TEXT } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: COLORS.TOTAL_TEXT } },
     fill: { fgColor: { rgb: COLORS.TOTAL_BG } },
     alignment: { horizontal: 'right', vertical: 'center' },
     border: {
@@ -109,7 +109,7 @@ const STYLES = {
     }
   },
   totalRowCenter: {
-    font: { name: 'Arial', sz: 9.5, bold: true, color: { rgb: COLORS.TOTAL_TEXT } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: COLORS.TOTAL_TEXT } },
     fill: { fgColor: { rgb: COLORS.TOTAL_BG } },
     alignment: { horizontal: 'center', vertical: 'center' },
     border: {
@@ -127,7 +127,7 @@ const STYLES = {
     else if (type === 'red') { bg = COLORS.ROSE_BG; fg = COLORS.ROSE_TEXT; }
 
     return {
-      font: { name: 'Arial', sz: 9, bold: true, color: { rgb: fg } },
+      font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: fg } },
       fill: { fgColor: { rgb: bg } },
       alignment: { horizontal: 'center', vertical: 'center' },
       border: {
@@ -150,6 +150,7 @@ const NUM_FMTS = {
 
 export interface SheetCellDefinition {
   value: any;
+  formula?: string;
   align?: 'left' | 'center' | 'right' | string;
   styleType?: string;
   numFmt?: string;
@@ -258,6 +259,9 @@ function buildStyledSheet(
         t: cellType,
         s: style
       };
+      if (cellDef.formula) {
+        cellObj.f = cellDef.formula;
+      }
       if (numFmt) cellObj.z = numFmt;
 
       ws[cellAddr] = cellObj;
@@ -276,18 +280,28 @@ function buildStyledSheet(
     ws['!merges'] = merges;
   }
 
+  // Automatic column width calculation based on cell contents
   const calculatedCols: XLSX.ColInfo[] = [];
   for (let c = 0; c < maxCols; c++) {
     let maxLen = colWidths && colWidths[c] ? colWidths[c] : 14;
     for (let r = 2; r < currentRow; r++) {
+      const isMergedSection = merges.some(m => m.s.r === r && m.s.c === 0 && m.e.c > 0);
+      if (isMergedSection && c === 0) continue;
+
       const addr = XLSX.utils.encode_cell({ r, c });
       const cell = ws[addr];
       if (cell && cell.v !== undefined && cell.v !== null) {
-        const len = String(cell.v).length + 3;
+        let valStr = String(cell.v);
+        if (cell.z === NUM_FMTS.CURRENCY && typeof cell.v === 'number') {
+          valStr = `R$ ${cell.v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        } else if (cell.z === NUM_FMTS.PERCENT && typeof cell.v === 'number') {
+          valStr = `${(cell.v * 100).toFixed(2)}%`;
+        }
+        const len = valStr.length + 5;
         if (len > maxLen) maxLen = len;
       }
     }
-    calculatedCols.push({ wch: Math.min(Math.max(maxLen, 12), 65) });
+    calculatedCols.push({ wch: Math.min(Math.max(maxLen, 14), 70) });
   }
   ws['!cols'] = calculatedCols;
 
@@ -311,8 +325,183 @@ export function exportToExcel(
   const peritoRegistro = profile?.registroProfissional || process.registroProfissional || 'CRC/CORECON Pericial';
   const devedorNome = process.nomeDevedor || 'Devedor Principal';
   const comarcaStr = process.cidadeUf || process.comarca || 'Comarca Cível';
+  const N_contracts = contracts.length;
 
   const wb = XLSX.utils.book_new();
+
+  // -------------------------------------------------------------
+  // Dynamic Index Calculations for Row References across Sheets
+  // -------------------------------------------------------------
+  const N_extraInc = (income.outrasReceitasIndividuais || []).length;
+  const N_extraExp = (expenses.outrasDespesasIndividuais || []).length;
+
+  // Sheet 3 (3. RLA e Despesas) Row Numbers (1-indexed for Excel)
+  const rlaRow3 = 8 + N_extraInc;
+  const expTotalRow3 = 18 + N_extraInc + N_extraExp;
+  const minExistRow3 = 21 + N_extraInc + N_extraExp;
+  const sobraRow3 = 22 + N_extraInc + N_extraExp;
+
+  // Contract-based sheet totals (Rows 5 to 4 + N_contracts, Total is at 5 + N_contracts)
+  const totalRow5 = 5 + N_contracts;
+  const totalRow6 = 5 + N_contracts;
+  const totalRow8 = 5 + N_contracts;
+  const totalRow10 = 5 + N_contracts;
+  const totalRow17 = 5 + N_contracts;
+
+  // =============================================================
+  // ABA 0: METODOLOGIA & MEMÓRIA (NOVA ABA MÁSTER)
+  // =============================================================
+  const aba0Rows: SheetRowDefinition[] = [
+    { type: 'section', cells: [{ value: '0.1. METODOLOGIA E FUNDAMENTAÇÃO JURÍDICO-PERICIAL DO SUPERENDIVIDAMENTO' }] },
+    {
+      type: 'header',
+      cells: [
+        { value: 'Aspecto Técnico / Metodológico', align: 'left' },
+        { value: 'Fundamentação Legal / Normativa', align: 'left' },
+        { value: 'Critério e Metodologia Aplicada no Laudo Pericial', align: 'left' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Base Legal Principal' },
+        { value: 'Lei nº 14.181/2021 & CDC Art. 54-A e 104-A/B' },
+        { value: 'Prevenção e tratamento do superendividamento com garantia de repactuação global de dívidas.' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Mínimo Existencial' },
+        { value: 'Decretos nº 11.150/2022 e 12.797/2025' },
+        { value: 'Preservação da dignidade humana fixada em R$ 1.621,00 (1 Salário Mínimo Vigente).' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Renda Líquida Ajustada (RLA)' },
+        { value: 'Metodologia Pericial Consolidada' },
+        { value: 'Salário Bruto deduzido de RPPS/INSS, IRRF, Pensão e Consignados compulsórios em folha.' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Expurgo de Abusividades' },
+        { value: 'Jurisprudência STJ & Súmula 473 STF' },
+        { value: 'Identificação e expurgo de venda casada de Seguro Prestamista, Tarifas sem prova e juros abusivos.' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Atualização Monetária IBGE' },
+        { value: 'Razão de Número Índice IBGE' },
+        { value: 'Fator de correção = (Número Índice Mês Atual) / (Número Índice Mês Anterior Saldo Ref).' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Plano Compulsório 60X' },
+        { value: 'Art. 104-B, §4º do CDC' },
+        { value: 'Rateio proporcional da Sobra Líquida em 60 parcelas mensais iguais pelo peso no passivo.' }
+      ]
+    },
+    { type: 'empty', cells: [] },
+    { type: 'section', cells: [{ value: '0.2. CONSOLIDAÇÃO DOS PRINCIPAIS INDICADORES DO LAUDO (COM FÓRMULAS INTER-ABAS)' }] },
+    {
+      type: 'header',
+      cells: [
+        { value: 'Indicador Orçamentário / Passivo Pericial', align: 'left' },
+        { value: 'Aba de Origem', align: 'center' },
+        { value: 'Valor Apurado (R$)', align: 'right' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Renda Líquida Mensal Ajustada (RLA)' },
+        { value: '3. RLA e Despesas', align: 'center' },
+        { value: summary.rla, formula: `='3. RLA e Despesas'!C${rlaRow3}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Total Despesas Essenciais Mensais' },
+        { value: '3. RLA e Despesas', align: 'center' },
+        { value: summary.totalDespesas, formula: `='3. RLA e Despesas'!C${expTotalRow3}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Mínimo Existencial Assegurado' },
+        { value: '3. RLA e Despesas', align: 'center' },
+        { value: expenses.minimoExistencialConfig || 1621, formula: `='3. RLA e Despesas'!C${minExistRow3}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Margem Disponível Mensal (Sobra Líquida)' },
+        { value: '3. RLA e Despesas', align: 'center' },
+        { value: summary.sobraLiquida, formula: `='3. RLA e Despesas'!C${sobraRow3}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Total Passivo Contratado Original' },
+        { value: '5. Contratos Bancários', align: 'center' },
+        { value: contracts.reduce((a, c) => a + c.valorLiberadoContrato, 0), formula: `='5. Contratos Bancários'!G${totalRow5}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Total Saldo Devedor Apurado por Pagas' },
+        { value: '6. Saldo por Pagas', align: 'center' },
+        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), formula: `='6. Saldo por Pagas'!J${totalRow6}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Total Passivo Corrigido INPC (Com Expurgo)' },
+        { value: '8. Atualização INPC', align: 'center' },
+        { value: summary.totalSaldoDevedorINPC, formula: `='8. Atualização INPC'!H${totalRow8}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Total Dívidas Elegíveis no Plano (Tabela 6)' },
+        { value: '10. Dívidas Tabela 6', align: 'center' },
+        { value: summary.totalSaldoDevedorINPC, formula: `='10. Dívidas Tabela 6'!E${totalRow10}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Parcela Mensal Repactuada Unificada (PMT 60x)' },
+        { value: '17. Plano Rateio 60X', align: 'center' },
+        { value: summary.capacidadeMensalPlano, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Total a Ser Quitado no Plano 60 Meses' },
+        { value: '17. Plano Rateio 60X', align: 'center' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `='17. Plano Rateio 60X'!F${totalRow17}`, styleType: 'currency' }
+      ]
+    }
+  ];
+  const sheet0 = buildStyledSheet('0. Metodologia & Memória', 'MÓDULO 0 — METODOLOGIA & MEMÓRIA DE CÁLCULO DA PERÍCIA JUDICIAL', aba0Rows, [35, 25, 60]);
+  XLSX.utils.book_append_sheet(wb, sheet0.ws, sheet0.sheetName);
 
   // =============================================================
   // ABA 1: PERFIL PROFISSIONAL (Módulo 1)
@@ -429,6 +618,20 @@ export function exportToExcel(
     totalDeducoesLegais += (income.pensaoAlimenticia || 0) + (income.outrasDeducoesLegais || 0);
   }
 
+  const extraIncEndRow = 5 + N_extraInc;
+  const deducoesRow = 6 + N_extraInc;
+  const consignadosRow = 7 + N_extraInc;
+
+  const rlaFormula = N_extraInc > 0
+    ? `=C5+SUM(C6:C${extraIncEndRow})-C${deducoesRow}-C${consignadosRow}`
+    : `=C5-C${deducoesRow}-C${consignadosRow}`;
+
+  const expStartRow = 12 + N_extraInc;
+  const expEndRow = 17 + N_extraInc + N_extraExp;
+  const expFormula = `=SUM(C${expStartRow}:C${expEndRow})`;
+
+  const sobraFormula = `=MAX(0, C${rlaRow3}-C${expTotalRow3})`;
+
   const aba3Rows: SheetRowDefinition[] = [
     { type: 'section', cells: [{ value: '3.1. RENDA LÍQUIDA MENSAL AJUSTADA (RLA)' }] },
     {
@@ -451,7 +654,7 @@ export function exportToExcel(
       cells: [
         { value: '(=) RENDA LÍQUIDA AJUSTADA (RLA)' },
         { value: 'Base de Cálculo', align: 'center' },
-        { value: summary.rla, styleType: 'currency' }
+        { value: summary.rla, formula: rlaFormula, styleType: 'currency' }
       ]
     },
     { type: 'empty', cells: [] },
@@ -479,7 +682,7 @@ export function exportToExcel(
       cells: [
         { value: 'TOTAL DAS DESPESAS ESSENCIAIS' },
         { value: 'Comprovado nos Autos', align: 'center' },
-        { value: summary.totalDespesas, styleType: 'currency' }
+        { value: summary.totalDespesas, formula: expFormula, styleType: 'currency' }
       ]
     },
     { type: 'empty', cells: [] },
@@ -497,7 +700,7 @@ export function exportToExcel(
       cells: [
         { value: '(=) MARGEM DISPONÍVEL MENSAL PARA O PLANO (SOBRA LÍQUIDA)' },
         { value: 'RLA − ME', align: 'center' as const, styleType: 'badge-green' as const },
-        { value: summary.sobraLiquida, styleType: 'currency' as const }
+        { value: summary.sobraLiquida, formula: sobraFormula, styleType: 'currency' as const }
       ]
     }
   ];
@@ -507,6 +710,10 @@ export function exportToExcel(
   // =============================================================
   // ABA 4: COMPROMETIMENTO DA RENDA (Módulo 4)
   // =============================================================
+  const totalEncargosRow4 = 5 + N_contracts;
+  const diagRow4 = totalEncargosRow4 + 3;
+  const posPlanoPmtRow4 = diagRow4 + 3;
+
   const aba4Rows: SheetRowDefinition[] = [
     { type: 'section', cells: [{ value: '4.1. ANÁLISE DO COMPROMETIMENTO DA RENDA MENSAL ANTES DO PLANO' }] },
     {
@@ -519,24 +726,27 @@ export function exportToExcel(
         { value: '% de Participação na RLA', align: 'center' }
       ]
     },
-    ...contracts.map(c => ({
-      type: 'data' as const,
-      cells: [
-        { value: c.credor },
-        { value: c.numeroContrato, align: 'center' as const },
-        { value: c.modalidade },
-        { value: c.valorParcelaAtual, styleType: 'currency' as const },
-        { value: summary.rla > 0 ? (c.valorParcelaAtual / summary.rla) : 0, styleType: 'percent' as const }
-      ]
-    })),
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: c.credor },
+          { value: c.numeroContrato, align: 'center' as const },
+          { value: c.modalidade },
+          { value: c.valorParcelaAtual, formula: `='5. Contratos Bancários'!M${r}`, styleType: 'currency' as const },
+          { value: summary.rla > 0 ? (c.valorParcelaAtual / summary.rla) : 0, formula: `=D${r}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
         { value: 'TOTAL ENCARGOS ATUAIS' },
         { value: '' },
         { value: '' },
-        { value: summary.totalParcelasAtuais, styleType: 'currency' },
-        { value: summary.rla > 0 ? (summary.totalParcelasAtuais / summary.rla) : 0, styleType: 'percent' }
+        { value: summary.totalParcelasAtuais, formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.rla > 0 ? (summary.totalParcelasAtuais / summary.rla) : 0, formula: `=D${totalEncargosRow4}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }
       ]
     },
     { type: 'empty', cells: [] },
@@ -549,10 +759,11 @@ export function exportToExcel(
         { value: '' },
         {
           value: summary.percentualComprometimentoRLA > 50 ? 'SUPERENDIVIDAMENTO SEVERO (>50% RLA)' : 'SUPERENDIVIDAMENTO REGULAR',
+          formula: `=IF(E${totalEncargosRow4}>0.5, "SUPERENDIVIDAMENTO SEVERO (>50% RLA)", "SUPERENDIVIDAMENTO REGULAR")`,
           align: 'center',
           styleType: summary.percentualComprometimentoRLA > 50 ? 'badge-red' : 'badge-amber'
         },
-        { value: summary.percentualComprometimentoRLA / 100, styleType: 'percent' }
+        { value: summary.percentualComprometimentoRLA / 100, formula: `=E${totalEncargosRow4}`, styleType: 'percent' }
       ]
     },
     { type: 'empty', cells: [] },
@@ -565,8 +776,8 @@ export function exportToExcel(
         { value: 'Resultado Apurado', align: 'center' }
       ]
     },
-    { type: 'data', cells: [{ value: 'Prestação Mensal Repactuada (PMT 60x)' }, { value: 'Art. 104-B §4º CDC', align: 'center' }, { value: summary.capacidadeMensalPlano, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: '% de Comprometimento Pós-Plano na RLA' }, { value: 'Limite 30% RLA', align: 'center' }, { value: (summary.rla > 0 ? summary.capacidadeMensalPlano / summary.rla : 0), styleType: 'percent' }] }
+    { type: 'data', cells: [{ value: 'Prestação Mensal Repactuada (PMT 60x)' }, { value: 'Art. 104-B §4º CDC', align: 'center' }, { value: summary.capacidadeMensalPlano, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: '% de Comprometimento Pós-Plano na RLA' }, { value: 'Limite 30% RLA', align: 'center' }, { value: (summary.rla > 0 ? summary.capacidadeMensalPlano / summary.rla : 0), formula: `=C${posPlanoPmtRow4}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }] }
   ];
   const sheet4 = buildStyledSheet('4. Comprometimento Renda', 'MÓDULO 4 — COMPROMETIMENTO DA RENDA MENSAL (ANTES X APÓS O PLANO)', aba4Rows, [30, 20, 25, 22, 22]);
   XLSX.utils.book_append_sheet(wb, sheet4.ws, sheet4.sheetName);
@@ -599,29 +810,32 @@ export function exportToExcel(
         { value: 'Saldo Devedor Ref. (R$)', align: 'right' }
       ]
     },
-    ...contracts.map(c => ({
-      type: 'data' as const,
-      cells: [
-        { value: c.credor, align: 'left' as const },
-        { value: c.numeroContrato, align: 'center' as const },
-        { value: c.modalidade, align: 'left' as const },
-        { value: c.dataContrato || '—', align: 'center' as const },
-        { value: c.dataPrimeiraParcela || '—', align: 'center' as const },
-        { value: c.vencimentoFinal || '—', align: 'center' as const },
-        { value: c.valorLiberadoContrato, styleType: 'currency' as const },
-        { value: c.valorFinalContrato || 0, styleType: 'currency' as const },
-        { value: c.valorIOF || 0, styleType: 'currency' as const },
-        { value: c.qtdParcelasTotal || 0, align: 'center' as const },
-        { value: c.qtdParcelasPagas || 0, align: 'center' as const },
-        { value: c.qtdParcelasRestantes || 0, align: 'center' as const },
-        { value: c.valorParcelaAtual, styleType: 'currency' as const },
-        { value: (c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
-        { value: c.valorSeguroPrestamista || 0, styleType: 'currency' as const },
-        { value: c.valorTarifasAbusivas || 0, styleType: 'currency' as const },
-        { value: c.expurgarAbusividades ? 'SIM' : 'NÃO', align: 'center' as const, styleType: c.expurgarAbusividades ? 'badge-amber' as const : 'default' as const },
-        { value: c.saldoDevedorRefUltimaParcela || 0, styleType: 'currency' as const }
-      ]
-    })),
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: c.credor, align: 'left' as const },
+          { value: c.numeroContrato, align: 'center' as const },
+          { value: c.modalidade, align: 'left' as const },
+          { value: c.dataContrato || '—', align: 'center' as const },
+          { value: c.dataPrimeiraParcela || '—', align: 'center' as const },
+          { value: c.vencimentoFinal || '—', align: 'center' as const },
+          { value: c.valorLiberadoContrato, styleType: 'currency' as const },
+          { value: c.valorFinalContrato || 0, styleType: 'currency' as const },
+          { value: c.valorIOF || 0, styleType: 'currency' as const },
+          { value: c.qtdParcelasTotal || 0, align: 'center' as const },
+          { value: c.qtdParcelasPagas || 0, align: 'center' as const },
+          { value: c.qtdParcelasRestantes || 0, formula: `=J${r}-K${r}`, align: 'center' as const },
+          { value: c.valorParcelaAtual, styleType: 'currency' as const },
+          { value: (c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
+          { value: c.valorSeguroPrestamista || 0, styleType: 'currency' as const },
+          { value: c.valorTarifasAbusivas || 0, styleType: 'currency' as const },
+          { value: c.expurgarAbusividades ? 'SIM' : 'NÃO', align: 'center' as const, styleType: c.expurgarAbusividades ? 'badge-amber' as const : 'default' as const },
+          { value: c.saldoDevedorRefUltimaParcela || 0, styleType: 'currency' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
@@ -631,18 +845,18 @@ export function exportToExcel(
         { value: '' },
         { value: '' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + c.valorLiberadoContrato, 0), styleType: 'currency' },
-        { value: contracts.reduce((a, c) => a + (c.valorFinalContrato || 0), 0), styleType: 'currency' },
-        { value: contracts.reduce((a, c) => a + (c.valorIOF || 0), 0), styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + c.valorLiberadoContrato, 0), formula: `=SUM(G5:G${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorFinalContrato || 0), 0), formula: `=SUM(H5:H${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorIOF || 0), 0), formula: `=SUM(I5:I${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: '' },
         { value: '' },
-        { value: summary.totalParcelasAtuais, styleType: 'currency' },
+        { value: summary.totalParcelasAtuais, formula: `=SUM(M5:M${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + (c.valorSeguroPrestamista || 0), 0), styleType: 'currency' },
-        { value: contracts.reduce((a, c) => a + (c.valorTarifasAbusivas || 0), 0), styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorSeguroPrestamista || 0), 0), formula: `=SUM(O5:O${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorTarifasAbusivas || 0), 0), formula: `=SUM(P5:P${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), styleType: 'currency' }
+        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), formula: `=SUM(R5:R${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -671,7 +885,8 @@ export function exportToExcel(
         { value: 'Saldo Corrigido INPC (R$)', align: 'right' }
       ]
     },
-    ...contracts.map(c => {
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
       const pmt = c.valorParcelaAtual || 0;
       const pagas = c.qtdParcelasPagas || 0;
       const principal = c.valorLiberadoContrato || 0;
@@ -682,18 +897,18 @@ export function exportToExcel(
       return {
         type: 'data' as const,
         cells: [
-          { value: c.numeroContrato, align: 'center' as const },
-          { value: c.credor },
-          { value: principal, styleType: 'currency' as const },
-          { value: (c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
-          { value: c.qtdParcelasTotal || 0, align: 'center' as const },
-          { value: pmt, styleType: 'currency' as const },
-          { value: c.dataContrato || '—', align: 'center' as const },
-          { value: c.dataPrimeiraParcela || '—', align: 'center' as const },
-          { value: pagas, align: 'center' as const },
-          { value: sdApurado, styleType: 'currency' as const },
-          { value: fator, styleType: 'fator7' as const },
-          { value: sdCorrigido, styleType: 'currency' as const }
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: principal, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
+          { value: (c.taxaJurosMes || 0) / 100, formula: `='5. Contratos Bancários'!N${r}`, styleType: 'percent' as const },
+          { value: c.qtdParcelasTotal || 0, formula: `='5. Contratos Bancários'!J${r}`, align: 'center' as const },
+          { value: pmt, formula: `='5. Contratos Bancários'!M${r}`, styleType: 'currency' as const },
+          { value: c.dataContrato || '—', formula: `='5. Contratos Bancários'!D${r}`, align: 'center' as const },
+          { value: c.dataPrimeiraParcela || '—', formula: `='5. Contratos Bancários'!E${r}`, align: 'center' as const },
+          { value: pagas, formula: `='5. Contratos Bancários'!K${r}`, align: 'center' as const },
+          { value: sdApurado, formula: `='5. Contratos Bancários'!R${r}`, styleType: 'currency' as const },
+          { value: fator, formula: `='8. Atualização INPC'!G${r}`, styleType: 'fator7' as const },
+          { value: sdCorrigido, formula: `=J${r}*K${r}`, styleType: 'currency' as const }
         ]
       };
     }),
@@ -702,16 +917,16 @@ export function exportToExcel(
       cells: [
         { value: 'TOTAL GERAL APURADO' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + c.valorLiberadoContrato, 0), styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + c.valorLiberadoContrato, 0), formula: `=SUM(C5:C${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: '' },
-        { value: summary.totalParcelasAtuais, styleType: 'currency' },
+        { value: summary.totalParcelasAtuais, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: '' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.saldoDevedorRefUltimaParcela || 0), 0), formula: `=SUM(J5:J${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
-        { value: summary.totalSaldoDevedorINPC, styleType: 'currency' }
+        { value: summary.totalSaldoDevedorINPC, formula: `=SUM(L5:L${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -736,19 +951,35 @@ export function exportToExcel(
         { value: 'Total Juros Pagos (R$)', align: 'right' }
       ]
     },
-    ...contracts.map(c => ({
-      type: 'data' as const,
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: c.modalidade, formula: `='5. Contratos Bancários'!C${r}` },
+          { value: c.valorLiberadoContrato, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
+          { value: c.qtdParcelasTotal || 0, formula: `='5. Contratos Bancários'!J${r}`, align: 'center' as const },
+          { value: c.valorParcelaAtual, formula: `='5. Contratos Bancários'!M${r}`, styleType: 'currency' as const },
+          { value: (c.valorParcelaAtual * (c.qtdParcelasPagas || 0) * 0.4), formula: `=F${r}*'5. Contratos Bancários'!K${r}*0.4`, styleType: 'currency' as const },
+          { value: (c.valorParcelaAtual * (c.qtdParcelasPagas || 0) * 0.6), formula: `=F${r}*'5. Contratos Bancários'!K${r}*0.6`, styleType: 'currency' as const }
+        ]
+      };
+    }),
+    {
+      type: 'total',
       cells: [
-        { value: c.numeroContrato, align: 'center' as const },
-        { value: c.credor },
-        { value: c.modalidade },
-        { value: c.valorLiberadoContrato, styleType: 'currency' as const },
-        { value: c.qtdParcelasTotal || 0, align: 'center' as const },
-        { value: c.valorParcelaAtual, styleType: 'currency' as const },
-        { value: (c.valorParcelaAtual * (c.qtdParcelasPagas || 0) * 0.4), styleType: 'currency' as const },
-        { value: (c.valorParcelaAtual * (c.qtdParcelasPagas || 0) * 0.6), styleType: 'currency' as const }
+        { value: 'TOTAL GERAL AMORTIZAÇÃO' },
+        { value: '' },
+        { value: '' },
+        { value: contracts.reduce((a, c) => a + c.valorLiberadoContrato, 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
+        { value: '' },
+        { value: summary.totalParcelasAtuais, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorParcelaAtual * (c.qtdParcelasPagas || 0) * 0.4), 0), formula: `=SUM(G5:G${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorParcelaAtual * (c.qtdParcelasPagas || 0) * 0.6), 0), formula: `=SUM(H5:H${4 + N_contracts})`, styleType: 'currency' }
       ]
-    }))
+    }
   ];
   const sheet7 = buildStyledSheet('7. Amortização Indiv.', 'MÓDULO 7 — AMORTIZAÇÃO INDIVIDUAL DOS CONTRATOS BANCÁRIOS', aba7Rows, [20, 25, 25, 22, 12, 20, 22, 22]);
   XLSX.utils.book_append_sheet(wb, sheet7.ws, sheet7.sheetName);
@@ -771,19 +1002,25 @@ export function exportToExcel(
         { value: 'Saldo Devedor Corrigido (R$)', align: 'right' }
       ]
     },
-    ...summary.contractsCalculated.map(c => ({
-      type: 'data' as const,
-      cells: [
-        { value: c.credor },
-        { value: c.numeroContrato, align: 'center' as const },
-        { value: c.tipoIndiceCorrecao || 'INPC', align: 'center' as const },
-        { value: c.dataReferenciaUltimoPagamento || '—', align: 'center' as const },
-        { value: c.saldoBaseAjustado, styleType: 'currency' as const },
-        { value: c.deducaoAbusiva, styleType: 'currency' as const },
-        { value: c.fatorCorrecao7Casas || 1.0, styleType: 'fator7' as const },
-        { value: c.saldoINPC, styleType: 'currency' as const }
-      ]
-    })),
+    ...summary.contractsCalculated.map((c, i) => {
+      const r = 5 + i;
+      const expurgoFormula = `=IF('5. Contratos Bancários'!Q${r}="SIM", '5. Contratos Bancários'!O${r}+'5. Contratos Bancários'!P${r}, 0)`;
+      const saldoCorrigidoFormula = `=(E${r}-F${r})*G${r}`;
+
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: c.tipoIndiceCorrecao || 'INPC', align: 'center' as const },
+          { value: c.dataReferenciaUltimoPagamento || '—', align: 'center' as const },
+          { value: c.saldoBaseAjustado, formula: `='6. Saldo por Pagas'!J${r}`, styleType: 'currency' as const },
+          { value: c.deducaoAbusiva, formula: expurgoFormula, styleType: 'currency' as const },
+          { value: c.fatorCorrecao7Casas || 1.0, styleType: 'fator7' as const },
+          { value: c.saldoINPC, formula: saldoCorrigidoFormula, styleType: 'currency' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
@@ -791,10 +1028,10 @@ export function exportToExcel(
         { value: '' },
         { value: '' },
         { value: '' },
-        { value: summary.contractsCalculated.reduce((a, c) => a + c.saldoBaseAjustado, 0), styleType: 'currency' },
-        { value: summary.contractsCalculated.reduce((a, c) => a + c.deducaoAbusiva, 0), styleType: 'currency' },
+        { value: summary.contractsCalculated.reduce((a, c) => a + c.saldoBaseAjustado, 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.contractsCalculated.reduce((a, c) => a + c.deducaoAbusiva, 0), formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
-        { value: summary.totalSaldoDevedorINPC, styleType: 'currency' }
+        { value: summary.totalSaldoDevedorINPC, formula: `=SUM(H5:H${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -817,26 +1054,29 @@ export function exportToExcel(
         { value: 'Saldo Devedor Final Corrigido (R$)', align: 'right' }
       ]
     },
-    ...summary.contractsCalculated.map(c => ({
-      type: 'data' as const,
-      cells: [
-        { value: c.credor },
-        { value: c.numeroContrato, align: 'center' as const },
-        { value: c.modalidade },
-        { value: c.saldoBaseAjustado, styleType: 'currency' as const },
-        { value: c.deducaoAbusiva, styleType: 'currency' as const },
-        { value: c.saldoINPC, styleType: 'currency' as const }
-      ]
-    })),
+    ...summary.contractsCalculated.map((c, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: c.modalidade, formula: `='5. Contratos Bancários'!C${r}` },
+          { value: c.saldoBaseAjustado, formula: `='8. Atualização INPC'!E${r}`, styleType: 'currency' as const },
+          { value: c.deducaoAbusiva, formula: `='8. Atualização INPC'!F${r}`, styleType: 'currency' as const },
+          { value: c.saldoINPC, formula: `='8. Atualização INPC'!H${r}`, styleType: 'currency' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
         { value: 'TOTAL PASSIVO CONSOLIDADO' },
         { value: '' },
         { value: '' },
-        { value: summary.contractsCalculated.reduce((a, c) => a + c.saldoBaseAjustado, 0), styleType: 'currency' },
-        { value: summary.contractsCalculated.reduce((a, c) => a + c.deducaoAbusiva, 0), styleType: 'currency' },
-        { value: summary.totalSaldoDevedorINPC, styleType: 'currency' }
+        { value: summary.contractsCalculated.reduce((a, c) => a + c.saldoBaseAjustado, 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.contractsCalculated.reduce((a, c) => a + c.deducaoAbusiva, 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.totalSaldoDevedorINPC, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -858,16 +1098,17 @@ export function exportToExcel(
         { value: 'Saldo Elegível INPC (R$)', align: 'right' }
       ]
     },
-    ...contracts.map(c => {
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
       const calc = summary.contractsCalculated.find(cc => cc.id === c.id);
       return {
         type: 'data' as const,
         cells: [
-          { value: c.credor },
-          { value: c.numeroContrato, align: 'center' as const },
-          { value: c.modalidade },
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: c.modalidade, formula: `='5. Contratos Bancários'!C${r}` },
           { value: 'Art. 54-A, § 1º do CDC (Lei 14.181/21)', align: 'center' as const, styleType: 'badge-blue' as const },
-          { value: calc?.saldoINPC || c.valorLiberadoContrato, styleType: 'currency' as const }
+          { value: calc?.saldoINPC || c.valorLiberadoContrato, formula: `='9. Saldos Corrigidos'!F${r}`, styleType: 'currency' as const }
         ]
       };
     }),
@@ -878,7 +1119,7 @@ export function exportToExcel(
         { value: '' },
         { value: '' },
         { value: 'Repactuação 60 Meses', align: 'center' },
-        { value: summary.totalSaldoDevedorINPC, styleType: 'currency' }
+        { value: summary.totalSaldoDevedorINPC, formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -902,7 +1143,8 @@ export function exportToExcel(
         { value: 'Diagnóstico Pericial', align: 'center' }
       ]
     },
-    ...contracts.map(c => {
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
       const b = getBacenStatus(c.taxaJurosMes, c.taxaMediaBacenMes || c.taxaJurosMes);
       const dif = c.taxaJurosMes - (c.taxaMediaBacenMes || c.taxaJurosMes);
       let badgeType: 'badge-green' | 'badge-amber' | 'badge-red' | 'badge-blue' = 'badge-green';
@@ -913,13 +1155,13 @@ export function exportToExcel(
       return {
         type: 'data' as const,
         cells: [
-          { value: c.credor },
-          { value: c.numeroContrato, align: 'center' as const },
-          { value: c.modalidade },
-          { value: (c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: c.modalidade, formula: `='5. Contratos Bancários'!C${r}` },
+          { value: (c.taxaJurosMes || 0) / 100, formula: `='5. Contratos Bancários'!N${r}`, styleType: 'percent' as const },
           { value: (c.taxaMediaBacenMes || c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
-          { value: dif / 100, styleType: 'percent' as const },
-          { value: b.label, align: 'center' as const, styleType: badgeType }
+          { value: dif / 100, formula: `=D${r}-E${r}`, styleType: 'percent' as const },
+          { value: b.label, formula: `=IF(F${r}>0.005, "TAXA ABUSIVA", IF(F${r}>0, "NO LIMITE DA MÉDIA", "ABAIXO DA MÉDIA"))`, align: 'center' as const, styleType: badgeType }
         ]
       };
     })
@@ -947,32 +1189,35 @@ export function exportToExcel(
         { value: 'TIR (% a.a.)', align: 'center' }
       ]
     },
-    ...evolution.map(e => ({
-      type: 'data' as const,
-      cells: [
-        { value: `${e.credor} (${e.numeroContrato})` },
-        { value: e.qtdPagas, align: 'center' as const },
-        { value: e.qtdPagar, align: 'center' as const },
-        { value: e.valorLiberado, styleType: 'currency' as const },
-        { value: e.totalPrestacoesJaPagas, styleType: 'currency' as const },
-        { value: e.totalRepactuado60m, styleType: 'currency' as const },
-        { value: e.totalPagoJaPagasERepactuadas, styleType: 'currency' as const },
-        { value: e.totalPagoAcimaDoValorLiberado, styleType: 'currency' as const },
-        { value: e.tirAmPercent / 100, styleType: 'percent' as const },
-        { value: e.tirAaPercent / 100, styleType: 'percent' as const }
-      ]
-    })),
+    ...evolution.map((e, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: `${e.credor} (${e.numeroContrato})` },
+          { value: e.qtdPagas, formula: `='5. Contratos Bancários'!K${r}`, align: 'center' as const },
+          { value: e.qtdPagar, align: 'center' as const },
+          { value: e.valorLiberado, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
+          { value: e.totalPrestacoesJaPagas, formula: `='13. Total Pago Contrato'!E${r}`, styleType: 'currency' as const },
+          { value: e.totalRepactuado60m, formula: `='17. Plano Rateio 60X'!F${r}`, styleType: 'currency' as const },
+          { value: e.totalPagoJaPagasERepactuadas, formula: `=E${r}+F${r}`, styleType: 'currency' as const },
+          { value: e.totalPagoAcimaDoValorLiberado, formula: `=G${r}-D${r}`, styleType: 'currency' as const },
+          { value: e.tirAmPercent / 100, formula: `=(G${r}/D${r})^(1/(B${r}+C${r}))-1`, styleType: 'percent' as const },
+          { value: e.tirAaPercent / 100, formula: `=(1+I${r})^12-1`, styleType: 'percent' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
         { value: 'TOTAL GERAL CONSOLIDADO' },
         { value: '' },
         { value: '' },
-        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPrestacoesJaPagas, 0), styleType: 'currency' },
-        { value: summary.capacidadeMensalPlano * 60, styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPrestacoesJaPagas, 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), formula: `=SUM(G5:G${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), formula: `=SUM(H5:H${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: '' }
       ]
@@ -996,17 +1241,18 @@ export function exportToExcel(
         { value: 'Total Acumulado Pago (R$)', align: 'right' }
       ]
     },
-    ...contracts.map(c => {
+    ...contracts.map((c, i) => {
+      const r = 5 + i;
       const pagasVal = (c.valorParcelaAtual || 0) * (c.qtdParcelasPagas || 0);
       const abusivosVal = (c.valorSeguroPrestamista || 0) + (c.valorTarifasAbusivas || 0);
       return {
         type: 'data' as const,
         cells: [
-          { value: c.credor },
-          { value: c.numeroContrato, align: 'center' as const },
-          { value: pagasVal, styleType: 'currency' as const },
-          { value: abusivosVal, styleType: 'currency' as const },
-          { value: pagasVal + abusivosVal, styleType: 'currency' as const }
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: pagasVal, formula: `='5. Contratos Bancários'!M${r}*'5. Contratos Bancários'!K${r}`, styleType: 'currency' as const },
+          { value: abusivosVal, formula: `='5. Contratos Bancários'!O${r}+'5. Contratos Bancários'!P${r}`, styleType: 'currency' as const },
+          { value: pagasVal + abusivosVal, formula: `=C${r}+D${r}`, styleType: 'currency' as const }
         ]
       };
     }),
@@ -1015,9 +1261,9 @@ export function exportToExcel(
       cells: [
         { value: 'TOTAL ACUMULADO PAGO A TODOS OS CREDORES' },
         { value: '' },
-        { value: contracts.reduce((a, c) => a + ((c.valorParcelaAtual || 0) * (c.qtdParcelasPagas || 0)), 0), styleType: 'currency' },
-        { value: contracts.reduce((a, c) => a + (c.valorSeguroPrestamista || 0) + (c.valorTarifasAbusivas || 0), 0), styleType: 'currency' },
-        { value: contracts.reduce((a, c) => a + ((c.valorParcelaAtual || 0) * (c.qtdParcelasPagas || 0)) + (c.valorSeguroPrestamista || 0) + (c.valorTarifasAbusivas || 0), 0), styleType: 'currency' }
+        { value: contracts.reduce((a, c) => a + ((c.valorParcelaAtual || 0) * (c.qtdParcelasPagas || 0)), 0), formula: `=SUM(C5:C${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + (c.valorSeguroPrestamista || 0) + (c.valorTarifasAbusivas || 0), 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
+        { value: contracts.reduce((a, c) => a + ((c.valorParcelaAtual || 0) * (c.qtdParcelasPagas || 0)) + (c.valorSeguroPrestamista || 0) + (c.valorTarifasAbusivas || 0), 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -1041,26 +1287,29 @@ export function exportToExcel(
         { value: 'TIR (% a.a.)', align: 'center' }
       ]
     },
-    ...evolution.map(e => ({
-      type: 'data' as const,
-      cells: [
-        { value: e.credor },
-        { value: e.numeroContrato, align: 'center' as const },
-        { value: e.valorLiberado, styleType: 'currency' as const },
-        { value: e.totalPagoJaPagasERepactuadas, styleType: 'currency' as const },
-        { value: e.totalPagoAcimaDoValorLiberado, styleType: 'currency' as const },
-        { value: e.tirAmPercent / 100, styleType: 'percent' as const },
-        { value: e.tirAaPercent / 100, styleType: 'percent' as const }
-      ]
-    })),
+    ...evolution.map((e, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: e.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: e.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: e.valorLiberado, formula: `='5. Contratos Bancários'!G${r}`, styleType: 'currency' as const },
+          { value: e.totalPagoJaPagasERepactuadas, formula: `='12. Evolução Contratos'!G${r}`, styleType: 'currency' as const },
+          { value: e.totalPagoAcimaDoValorLiberado, formula: `='12. Evolução Contratos'!H${r}`, styleType: 'currency' as const },
+          { value: e.tirAmPercent / 100, formula: `='12. Evolução Contratos'!I${r}`, styleType: 'percent' as const },
+          { value: e.tirAaPercent / 100, formula: `='12. Evolução Contratos'!J${r}`, styleType: 'percent' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
         { value: 'TOTAL GERAL JUROS E RETORNO' },
         { value: '' },
-        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), styleType: 'currency' },
-        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.valorLiberado, 0), formula: `=SUM(C5:C${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPagoJaPagasERepactuadas, 0), formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
+        { value: evolution.reduce((a, r) => a + r.totalPagoAcimaDoValorLiberado, 0), formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
         { value: '' },
         { value: '' }
       ]
@@ -1092,19 +1341,26 @@ export function exportToExcel(
   ];
 
   for (let m = 1; m <= 60; m++) {
+    const r = 4 + m; // row index in Excel (5 for m=1, 64 for m=60)
     const jurosM = currentSaldoPlano * iPlano;
     const amortM = Math.min(currentSaldoPlano, pmtPlanoMes - jurosM);
     const saldoFinalM = Math.max(0, currentSaldoPlano - amortM);
+
+    const saldoInicialFormula = m === 1 ? `='10. Dívidas Tabela 6'!E${totalRow10}` : `=F${r - 1}`;
+    const jurosFormula = `=0`;
+    const amortFormula = m === 1 ? `=E${r}` : `=MIN(B${r}, E${r})`;
+    const pmtFormula = `='17. Plano Rateio 60X'!E${totalRow17}`;
+    const saldoFinalFormula = `=MAX(0, B${r}-D${r})`;
 
     rowsPrice60.push({
       type: 'data',
       cells: [
         { value: m, align: 'center' },
-        { value: currentSaldoPlano, styleType: 'currency' },
-        { value: jurosM, styleType: 'currency' },
-        { value: amortM, styleType: 'currency' },
-        { value: pmtPlanoMes, styleType: 'currency' },
-        { value: saldoFinalM, styleType: 'currency' }
+        { value: currentSaldoPlano, formula: saldoInicialFormula, styleType: 'currency' },
+        { value: jurosM, formula: jurosFormula, styleType: 'currency' },
+        { value: amortM, formula: amortFormula, styleType: 'currency' },
+        { value: pmtPlanoMes, formula: pmtFormula, styleType: 'currency' },
+        { value: saldoFinalM, formula: saldoFinalFormula, styleType: 'currency' }
       ]
     });
     currentSaldoPlano = saldoFinalM;
@@ -1114,11 +1370,11 @@ export function exportToExcel(
     type: 'total',
     cells: [
       { value: 'TOTAL EM 60 PARCELAS' },
-      { value: summary.totalSaldoDevedorINPC, styleType: 'currency' },
-      { value: 0, styleType: 'currency' },
-      { value: summary.capacidadeMensalPlano * 60, styleType: 'currency' },
-      { value: summary.capacidadeMensalPlano, styleType: 'currency' },
-      { value: 0, styleType: 'currency' }
+      { value: summary.totalSaldoDevedorINPC, formula: `='10. Dívidas Tabela 6'!E${totalRow10}`, styleType: 'currency' },
+      { value: 0, formula: `=SUM(C5:C64)`, styleType: 'currency' },
+      { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(D5:D64)`, styleType: 'currency' },
+      { value: summary.capacidadeMensalPlano, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' },
+      { value: 0, formula: `=F64`, styleType: 'currency' }
     ]
   });
 
@@ -1144,14 +1400,14 @@ export function exportToExcel(
         { value: 'Status / Garantia Legal', align: 'center' }
       ]
     },
-    { type: 'data', cells: [{ value: 'Renda Líquida Ajustada Pós-Repactuação (RLA)' }, { value: rlaPosRepactuacaoVal, styleType: 'currency' }, { value: 'Renda reorganizada', align: 'center' }] },
-    { type: 'data', cells: [{ value: '(−) Despesas Essenciais Comprovadas' }, { value: summary.totalDespesas, styleType: 'currency' }, { value: 'Mínimo Existencial assegurado', align: 'center' }] },
-    { type: 'data', cells: [{ value: '(−) Prestação Mensal do Plano Compulsório (PMT 60x)' }, { value: pmtPlanoVal, styleType: 'currency' }, { value: 'Repactuação em 60 parcelas iguais', align: 'center' }] },
+    { type: 'data', cells: [{ value: 'Renda Líquida Ajustada Pós-Repactuação (RLA)' }, { value: rlaPosRepactuacaoVal, formula: `='3. RLA e Despesas'!C${rlaRow3}`, styleType: 'currency' }, { value: 'Renda reorganizada', align: 'center' }] },
+    { type: 'data', cells: [{ value: '(−) Despesas Essenciais Comprovadas' }, { value: summary.totalDespesas, formula: `='3. RLA e Despesas'!C${expTotalRow3}`, styleType: 'currency' }, { value: 'Mínimo Existencial assegurado', align: 'center' }] },
+    { type: 'data', cells: [{ value: '(−) Prestação Mensal do Plano Compulsório (PMT 60x)' }, { value: pmtPlanoVal, formula: `='17. Plano Rateio 60X'!E${totalRow17}`, styleType: 'currency' }, { value: 'Repactuação em 60 parcelas iguais', align: 'center' }] },
     {
       type: 'total',
       cells: [
         { value: '(=) Total de Recursos Livres Remanescentes' },
-        { value: recursosLivresVal, styleType: 'currency' as const },
+        { value: recursosLivresVal, formula: `=MAX(0, B5-B6-B7)`, styleType: 'currency' as const },
         { value: 'Sobra orçamentária do devedor', align: 'center' as const, styleType: 'badge-green' as const }
       ]
     },
@@ -1160,7 +1416,7 @@ export function exportToExcel(
       type: 'data',
       cells: [
         { value: 'Preservação do Mínimo Existencial (1 Salário Mínimo)?' },
-        { value: recursosLivresVal >= (expenses.minimoExistencialConfig || 1621) ? 'SIM — Preservado' : 'PARCIAL', align: 'center', styleType: recursosLivresVal >= (expenses.minimoExistencialConfig || 1621) ? 'badge-green' : 'badge-amber' },
+        { value: recursosLivresVal >= (expenses.minimoExistencialConfig || 1621) ? 'SIM — Preservado' : 'PARCIAL', formula: `=IF(B8>='3. RLA e Despesas'!C${minExistRow3}, "SIM — Preservado", "PARCIAL")`, align: 'center', styleType: recursosLivresVal >= (expenses.minimoExistencialConfig || 1621) ? 'badge-green' : 'badge-amber' },
         { value: 'Art. 54-A, § 1º do CDC', align: 'center' }
       ]
     },
@@ -1168,8 +1424,8 @@ export function exportToExcel(
       type: 'data',
       cells: [
         { value: 'Preservação de no mínimo 20% da Relação Remuneratória?' },
-        { value: percentPreservadoPosPlanoVal / 100, styleType: 'percent' },
-        { value: percentPreservadoPosPlanoVal >= 20 ? 'SIM (Superior a 20%)' : 'NÃO', align: 'center', styleType: percentPreservadoPosPlanoVal >= 20 ? 'badge-green' : 'badge-red' }
+        { value: percentPreservadoPosPlanoVal / 100, formula: `=1-(B7/B5)`, styleType: 'percent' },
+        { value: percentPreservadoPosPlanoVal >= 20 ? 'SIM (Superior a 20%)' : 'NÃO', formula: `=IF((1-(B7/B5))>=0.2, "SIM (Superior a 20%)", "NÃO")`, align: 'center', styleType: percentPreservadoPosPlanoVal >= 20 ? 'badge-green' : 'badge-red' }
       ]
     }
   ];
@@ -1192,26 +1448,29 @@ export function exportToExcel(
         { value: 'Total Quitado em 60m (R$)', align: 'right' }
       ]
     },
-    ...plan60x.map(p => ({
-      type: 'data' as const,
-      cells: [
-        { value: p.credor },
-        { value: p.numeroContrato, align: 'center' as const },
-        { value: p.saldoDevedorINPC, styleType: 'currency' as const },
-        { value: p.percentualDoTotal / 100, styleType: 'percent' as const },
-        { value: p.parcelaRepactuadaPMT, styleType: 'currency' as const },
-        { value: p.totalQuitado60m, styleType: 'currency' as const }
-      ]
-    })),
+    ...plan60x.map((p, i) => {
+      const r = 5 + i;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: p.credor, formula: `='5. Contratos Bancários'!A${r}` },
+          { value: p.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
+          { value: p.saldoDevedorINPC, formula: `='9. Saldos Corrigidos'!F${r}`, styleType: 'currency' as const },
+          { value: p.percentualDoTotal / 100, formula: `=C${r}/C${totalRow17}`, styleType: 'percent' as const },
+          { value: p.parcelaRepactuadaPMT, formula: `='3. RLA e Despesas'!C${sobraRow3}*D${r}`, styleType: 'currency' as const },
+          { value: p.totalQuitado60m, formula: `=E${r}*60`, styleType: 'currency' as const }
+        ]
+      };
+    }),
     {
       type: 'total',
       cells: [
         { value: 'TOTAL PLANO REPACTUADO 60X' },
         { value: '' },
-        { value: summary.totalSaldoDevedorINPC, styleType: 'currency' },
-        { value: 1.0, styleType: 'percent' },
-        { value: summary.capacidadeMensalPlano, styleType: 'currency' },
-        { value: summary.capacidadeMensalPlano * 60, styleType: 'currency' }
+        { value: summary.totalSaldoDevedorINPC, formula: `=SUM(C5:C${4 + N_contracts})`, styleType: 'currency' },
+        { value: 1.0, formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'percent' },
+        { value: summary.capacidadeMensalPlano, formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' }
       ]
     }
   ];
@@ -1284,26 +1543,29 @@ export function exportToExcel(
           { value: 'Expurgar Abusividades?', align: 'center' }
         ]
       },
-      ...credorContracts.map(c => ({
-        type: 'data' as const,
-        cells: [
-          { value: c.numeroContrato, align: 'center' as const },
-          { value: c.modalidade },
-          { value: c.dataContrato || '—', align: 'center' as const },
-          { value: c.dataPrimeiraParcela || '—', align: 'center' as const },
-          { value: c.vencimentoFinal || '—', align: 'center' as const },
-          { value: c.valorLiberadoContrato, styleType: 'currency' as const },
-          { value: c.valorFinalContrato || 0, styleType: 'currency' as const },
-          { value: c.valorIOF || 0, styleType: 'currency' as const },
-          { value: c.qtdParcelasPagas || 0, align: 'center' as const },
-          { value: c.qtdParcelasRestantes || 0, align: 'center' as const },
-          { value: c.valorParcelaAtual, styleType: 'currency' as const },
-          { value: (c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
-          { value: c.valorSeguroPrestamista || 0, styleType: 'currency' as const },
-          { value: c.valorTarifasAbusivas || 0, styleType: 'currency' as const },
-          { value: c.expurgarAbusividades ? 'SIM' : 'NÃO', align: 'center' as const, styleType: c.expurgarAbusividades ? 'badge-amber' as const : 'default' as const }
-        ]
-      }))
+      ...credorContracts.map((c, i) => {
+        const r = 5 + i;
+        return {
+          type: 'data' as const,
+          cells: [
+            { value: c.numeroContrato, align: 'center' as const },
+            { value: c.modalidade },
+            { value: c.dataContrato || '—', align: 'center' as const },
+            { value: c.dataPrimeiraParcela || '—', align: 'center' as const },
+            { value: c.vencimentoFinal || '—', align: 'center' as const },
+            { value: c.valorLiberadoContrato, styleType: 'currency' as const },
+            { value: c.valorFinalContrato || 0, styleType: 'currency' as const },
+            { value: c.valorIOF || 0, styleType: 'currency' as const },
+            { value: c.qtdParcelasPagas || 0, align: 'center' as const },
+            { value: c.qtdParcelasRestantes || 0, formula: `=J${r}-I${r}`, align: 'center' as const },
+            { value: c.valorParcelaAtual, styleType: 'currency' as const },
+            { value: (c.taxaJurosMes || 0) / 100, styleType: 'percent' as const },
+            { value: c.valorSeguroPrestamista || 0, styleType: 'currency' as const },
+            { value: c.valorTarifasAbusivas || 0, styleType: 'currency' as const },
+            { value: c.expurgarAbusividades ? 'SIM' : 'NÃO', align: 'center' as const, styleType: c.expurgarAbusividades ? 'badge-amber' as const : 'default' as const }
+          ]
+        };
+      })
     ];
     const cleanSheetName = `Credor ${credor.replace(/[^a-zA-Z0-9]/g, '').slice(0, 15)}`;
     const sheetCredor = buildStyledSheet(cleanSheetName, `DETALHAMENTO CONTRATUAL — ${credor.toUpperCase()}`, rowsCredor);
