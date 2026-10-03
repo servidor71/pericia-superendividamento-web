@@ -513,16 +513,16 @@ export function exportToExcel(
       type: 'data',
       cells: [
         { value: 'Parcela Mensal Repactuada Unificada (PMT 60x)' },
-        { value: '16. Plano Rateio 60X', align: 'center' },
-        { value: summary.capacidadeMensalPlano, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' }
+        { value: '14. Price 60 Parcelas', align: 'center' },
+        { value: summary.capacidadeMensalPlano, formula: `='14. Price 60 Parcelas'!B8`, styleType: 'currency' }
       ]
     },
     {
       type: 'data',
       cells: [
         { value: 'Total a Ser Quitado no Plano 60 Meses' },
-        { value: '16. Plano Rateio 60X', align: 'center' },
-        { value: summary.capacidadeMensalPlano * 60, formula: `='16. Plano Rateio 60X'!F${totalRow16}`, styleType: 'currency' }
+        { value: '14. Price 60 Parcelas', align: 'center' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `='14. Price 60 Parcelas'!B8*60`, styleType: 'currency' }
       ]
     }
   ];
@@ -781,7 +781,7 @@ export function exportToExcel(
   const expEndRowExcel = 12 + N_rla1 + N_rla2 + N_exp;
   const expFormula = `=SUM(C${expStartRowExcel}:C${expEndRowExcel})`;
   const sobraFormula = `=MAX(0, C${rlaRow3}-C${expTotalRow3})`;
-  const recursosLivresFormula = `=MAX(0, C${rla2TotalRow3}-C${expTotalRow3}-'16. Plano Rateio 60X'!E${totalRow16})`;
+  const recursosLivresFormula = `=MAX(0, C${rla2TotalRow3}-C${expTotalRow3}-'14. Price 60 Parcelas'!B8)`;
 
   const aba3Rows: SheetRowDefinition[] = [
     { type: 'section', cells: [{ value: '3.1. RENDA LÍQUIDA MENSAL AJUSTADA (RLA 1 - ANTES DO PLANO COMPULSÓRIO)' }] },
@@ -1655,7 +1655,7 @@ export function exportToExcel(
     },
     { type: 'data', cells: [{ value: 'Renda Líquida Ajustada Pós-Repactuação (RLA)' }, { value: rlaPosRepactuacaoVal, formula: `='3. RLA e Despesas'!C${rlaRow3}`, styleType: 'currency' }, { value: 'Renda reorganizada', align: 'center' }] },
     { type: 'data', cells: [{ value: '(−) Despesas Essenciais Comprovadas' }, { value: summary.totalDespesas, formula: `='3. RLA e Despesas'!C${expTotalRow3}`, styleType: 'currency' }, { value: 'Mínimo Existencial assegurado', align: 'center' }] },
-    { type: 'data', cells: [{ value: '(−) Prestação Mensal do Plano Compulsório (PMT 60x)' }, { value: pmtPlanoVal, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' }, { value: 'Repactuação em 60 parcelas iguais', align: 'center' }] },
+    { type: 'data', cells: [{ value: '(−) Prestação Mensal do Plano Compulsório (PMT 60x)' }, { value: pmtPlanoVal, formula: `='14. Price 60 Parcelas'!B8`, styleType: 'currency' }, { value: 'Repactuação em 60 parcelas iguais', align: 'center' }] },
     {
       type: 'total',
       cells: [
@@ -1710,7 +1710,7 @@ export function exportToExcel(
           { value: p.numeroContrato, formula: `='5. Contratos Bancários'!B${r}`, align: 'center' as const },
           { value: p.saldoDevedorINPC, formula: `='9. Saldos Corrigidos'!F${r}`, styleType: 'currency' as const },
           { value: p.percentualDoTotal / 100, formula: `=C${r}/C${totalRow16}`, styleType: 'percent' as const },
-          { value: p.parcelaRepactuadaPMT, formula: `='3. RLA e Despesas'!C${sobraRow3}*D${r}`, styleType: 'currency' as const },
+          { value: p.parcelaRepactuadaPMT, formula: `='14. Price 60 Parcelas'!B8*D${r}`, styleType: 'currency' as const },
           { value: p.totalQuitado60m, formula: `=E${r}*60`, styleType: 'currency' as const }
         ]
       };
@@ -1722,8 +1722,8 @@ export function exportToExcel(
         { value: '' },
         { value: summary.totalSaldoDevedorINPC, formula: `=SUM(C5:C${4 + N_contracts})`, styleType: 'currency' },
         { value: 1.0, formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'percent' },
-        { value: summary.capacidadeMensalPlano, formula: `=SUM(E5:E${4 + N_contracts})`, styleType: 'currency' },
-        { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(F5:F${4 + N_contracts})`, styleType: 'currency' }
+        { value: summary.capacidadeMensalPlano, formula: `='14. Price 60 Parcelas'!B8`, styleType: 'currency' },
+        { value: summary.capacidadeMensalPlano * 60, formula: `='14. Price 60 Parcelas'!B8*60`, styleType: 'currency' }
       ]
     }
   ];
