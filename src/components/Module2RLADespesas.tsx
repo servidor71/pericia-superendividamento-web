@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DollarSign, Plus, Trash2, ShieldCheck, Building2, FileText, CheckCircle2 } from 'lucide-react';
 import type { IncomeData, ExpenseData, ContrachequeEmpregador, DescontoFolhaItem, CustomExpenseItem, Contract } from '../types';
 import { initialIncomeData, initialExpenseData } from '../mockData';
-import { calculateRLA, calculateTotalExpenses, calculateModulo18PricePlan, formatCurrency } from '../services/calculations';
+import { calculateRLA, calculateTotalExpenses, calculateModulo18PricePlan, formatCurrency, findMatchingModulo4Row } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 
 interface Module2Props {
@@ -31,7 +31,7 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
   const totalDespesas = calculateTotalExpenses(expenses);
   const minimoExistencial = expenses.minimoExistencialConfig || 600;
 
-  // Plano do Módulo 16 (Tabela Price 60x Rateio - Parcela Repactuada PMT)
+  // Plano do Módulo 16 / Módulo 4 (Tabela Price 60x Rateio - Parcela Repactuada PMT)
   const modulo16Plan = calculateModulo18PricePlan(contracts, taxaJurosAm, 60);
 
   // Mapeamento de Empréstimos Consignados x Não Consignados Repactuados
@@ -41,30 +41,14 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
     if (consignadosRepactuadosMap[d.id] !== undefined) {
       return consignadosRepactuadosMap[d.id];
     }
-    const numNormItem = (d.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const descNormItem = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    const matchedRow = modulo16Plan.rows.find(r => {
-      const numNormRow = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const credNormRow = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      
-      if (numNormRow && numNormItem && (numNormRow === numNormItem || numNormItem.includes(numNormRow) || numNormRow.includes(numNormItem))) {
-        return true;
-      }
-      if (numNormRow && descNormItem && (numNormRow === descNormItem || descNormItem.includes(numNormRow) || numNormRow.includes(descNormItem))) {
-        return true;
-      }
-      if (d.id && r.id && d.id === r.id) {
-        return true;
-      }
-      if (credNormRow && (descNormItem.includes(credNormRow) || numNormItem.includes(credNormRow))) {
-        return true;
-      }
-      return false;
-    });
-
+    const matchedRow = findMatchingModulo4Row(
+      d.descricao,
+      d.numeroContrato,
+      d.id,
+      modulo16Plan.rows,
+      descIdx
+    );
     if (matchedRow) return matchedRow.pmtMensalIndividual;
-    if (modulo16Plan.rows[descIdx]) return modulo16Plan.rows[descIdx].pmtMensalIndividual;
     return Math.round((d.valor * 0.45) * 100) / 100;
   };
 
@@ -92,11 +76,13 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
   // Total dos Empréstimos Não Consignados Repactuados (extraído da tabela de comprometimento do Módulo 4)
   const totalNaoConsignados = contracts
     .filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal')))
-    .reduce((acc, c) => {
-      const numNormC = (c.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const matchedRow = modulo16Plan.rows.find(r => 
-        r.id === c.id || 
-        (numNormC && r.numeroContrato && r.numeroContrato.toLowerCase().replace(/[^a-z0-9]/g, '') === numNormC)
+    .reduce((acc, c, idx) => {
+      const matchedRow = findMatchingModulo4Row(
+        c.credor,
+        c.numeroContrato,
+        c.id,
+        modulo16Plan.rows,
+        idx
       );
       return acc + (matchedRow ? matchedRow.pmtMensalIndividual : (c.valorParcelaAtual || 0));
     }, 0);
@@ -1051,11 +1037,13 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
                   </tr>
 
                   {/* Empréstimos Não Consignados Repactuados Dinâmicos (Extraídos da Tabela de Comprometimento do Módulo 4) */}
-                  {contracts.filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal'))).map((c) => {
-                    const numNormC = (c.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const matchedRow = modulo16Plan.rows.find(r => 
-                      r.id === c.id || 
-                      (numNormC && r.numeroContrato && r.numeroContrato.toLowerCase().replace(/[^a-z0-9]/g, '') === numNormC)
+                  {contracts.filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal'))).map((c, cIdx) => {
+                    const matchedRow = findMatchingModulo4Row(
+                      c.credor,
+                      c.numeroContrato,
+                      c.id,
+                      modulo16Plan.rows,
+                      cIdx
                     );
                     const pmtRepactuada = matchedRow ? matchedRow.pmtMensalIndividual : (c.valorParcelaAtual || 0);
                     return (

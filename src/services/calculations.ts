@@ -613,3 +613,84 @@ export function formatCpfCnpj(val: string): string {
       .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
   }
 }
+
+/**
+ * Correspondência Estrita e Tokenizada entre o ITEM / RUBRICA do Módulo 3 e a Coluna N.º CONTRATO / CREDOR do Módulo 4
+ */
+export function findMatchingModulo4Row<T extends { id?: string; numeroContrato?: string; credor?: string; pmtMensalIndividual: number }>(
+  itemDesc: string,
+  itemNumContrato: string | undefined,
+  itemId: string | undefined,
+  modulo4Rows: T[],
+  fallbackIndex: number
+): T | undefined {
+  if (!modulo4Rows || modulo4Rows.length === 0) return undefined;
+
+  // 1. Direct ID match
+  if (itemId) {
+    const idMatch = modulo4Rows.find(r => r.id && r.id === itemId);
+    if (idMatch) return idMatch;
+  }
+
+  const tokenize = (str: string) => str.toUpperCase().replace(/[^A-Z0-9]/g, ' ').split(/\s+/).filter(Boolean);
+
+  const itemRaw = (itemNumContrato || itemDesc || '').trim();
+  const itemClean = itemRaw.toUpperCase().replace(/[^A-Z0-9]/g, ' ');
+  const itemTokens = tokenize(itemRaw);
+
+  // PASS 1: Exact Clean String Equality (e.g. "BRB EMPRESTIMO I" === "BRB EMPRESTIMO I")
+  const exactMatch = modulo4Rows.find(r => {
+    const rNumClean = (r.numeroContrato || '').toUpperCase().replace(/[^A-Z0-9]/g, ' ');
+    return rNumClean.trim() !== '' && rNumClean.trim() === itemClean.trim();
+  });
+  if (exactMatch) return exactMatch;
+
+  // PASS 2: Tokenized Array Equality (tokens match exactly 1:1)
+  const tokenArrayMatch = modulo4Rows.find(r => {
+    const rTokens = tokenize(r.numeroContrato || '');
+    if (rTokens.length > 0 && rTokens.length === itemTokens.length) {
+      return rTokens.every((t, idx) => t === itemTokens[idx]);
+    }
+    return false;
+  });
+  if (tokenArrayMatch) return tokenArrayMatch;
+
+  // PASS 3: Roman Numeral Token Match
+  const romanMatch = modulo4Rows.find(r => {
+    const rTokens = tokenize(r.numeroContrato || '');
+    if (rTokens.length > 0 && itemTokens.length > 0) {
+      const rLast = rTokens[rTokens.length - 1];
+      const itemLast = itemTokens[itemTokens.length - 1];
+      const isRoman = (s: string) => /^I{1,3}$|^IV$|^V$|^VI{1,3}$|^IX$|^X$/.test(s);
+      
+      if (isRoman(itemLast) || isRoman(rLast)) {
+        if (rLast === itemLast) {
+          const sharedPrefix = rTokens.some(t => itemTokens.includes(t));
+          if (sharedPrefix) return true;
+        }
+      }
+    }
+    return false;
+  });
+  if (romanMatch) return romanMatch;
+
+  // PASS 4: Extract Digits (Contract Numbers like 26487324, 331098)
+  const itemDigits = itemRaw.replace(/[^0-9]/g, '');
+  if (itemDigits.length >= 4) {
+    const digitMatch = modulo4Rows.find(r => {
+      const rDigits = (r.numeroContrato || '').replace(/[^0-9]/g, '');
+      return rDigits.length >= 4 && (rDigits === itemDigits || rDigits.includes(itemDigits) || itemDigits.includes(rDigits));
+    });
+    if (digitMatch) return digitMatch;
+  }
+
+  // PASS 5: Creditor Name Token Match
+  const credorMatch = modulo4Rows.find(r => {
+    const credTokens = tokenize(r.credor || '');
+    return credTokens.some(ct => ct.length >= 4 && itemTokens.includes(ct));
+  });
+  if (credorMatch) return credorMatch;
+
+  // PASS 6: Fallback to index position
+  return modulo4Rows[fallbackIndex];
+}

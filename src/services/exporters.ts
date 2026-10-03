@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx-js-style';
 import type { ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProfessionalProfile, ProcessDocumentItem, DescontoFolhaItem } from '../types';
-import { calculateFinancialSummary, calculateProportional60xPlan, calculateContractEvolution, getBacenStatus, getSaldoDevedorModulo6, calculateModulo18PricePlan } from './calculations';
+import { calculateFinancialSummary, calculateProportional60xPlan, calculateContractEvolution, getBacenStatus, getSaldoDevedorModulo6, calculateModulo18PricePlan, findMatchingModulo4Row } from './calculations';
 
 // --- Color Constants matching App visual design ---
 const COLORS = {
@@ -685,30 +685,14 @@ export function exportToExcel(
   const modulo16PlanExp = calculateModulo18PricePlan(contracts, taxaJurosPlano, 60);
 
   const getPmtRepactuadoExp = (d: DescontoFolhaItem, descIdx: number): number => {
-    const numNormItem = (d.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const descNormItem = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    const matchedRow = modulo16PlanExp.rows.find(r => {
-      const numNormRow = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const credNormRow = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      
-      if (numNormRow && numNormItem && (numNormRow === numNormItem || numNormItem.includes(numNormRow) || numNormRow.includes(numNormItem))) {
-        return true;
-      }
-      if (numNormRow && descNormItem && (numNormRow === descNormItem || descNormItem.includes(numNormRow) || numNormRow.includes(descNormItem))) {
-        return true;
-      }
-      if (d.id && r.id && d.id === r.id) {
-        return true;
-      }
-      if (credNormRow && (descNormItem.includes(credNormRow) || numNormItem.includes(credNormRow))) {
-        return true;
-      }
-      return false;
-    });
-
+    const matchedRow = findMatchingModulo4Row(
+      d.descricao,
+      d.numeroContrato,
+      d.id,
+      modulo16PlanExp.rows,
+      descIdx
+    );
     if (matchedRow) return matchedRow.pmtMensalIndividual;
-    if (modulo16PlanExp.rows[descIdx]) return modulo16PlanExp.rows[descIdx].pmtMensalIndividual;
     return Math.round((d.valor * 0.45) * 100) / 100;
   };
 
