@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx-js-style';
-import type { ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProfessionalProfile, ProcessDocumentItem } from '../types';
-import { calculateFinancialSummary, calculateProportional60xPlan, calculateContractEvolution, getBacenStatus, getSaldoDevedorModulo6 } from './calculations';
+import type { ProcessData, IncomeData, ExpenseData, Contract, QuesitoPericial, ProfessionalProfile, ProcessDocumentItem, DescontoFolhaItem } from '../types';
+import { calculateFinancialSummary, calculateProportional60xPlan, calculateContractEvolution, getBacenStatus, getSaldoDevedorModulo6, calculateModulo18PricePlan } from './calculations';
 
 // --- Color Constants matching App visual design ---
 const COLORS = {
@@ -682,12 +682,31 @@ export function exportToExcel(
 
   let rlaDepoisTotalVal = 0;
 
+  const modulo16PlanExp = calculateModulo18PricePlan(contracts, taxaJurosPlano, 60);
+
+  const getPmtRepactuadoExp = (d: DescontoFolhaItem, descIdx: number): number => {
+    const descNorm = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matchedRow = modulo16PlanExp.rows.find(r => {
+      const numNorm = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const credNorm = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (numNorm && descNorm.includes(numNorm)) || 
+             (numNorm && numNorm.includes(descNorm)) || 
+             (credNorm && descNorm.includes(credNorm));
+    });
+    if (matchedRow) return matchedRow.pmtMensalIndividual;
+    if (modulo16PlanExp.rows[descIdx]) return modulo16PlanExp.rows[descIdx].pmtMensalIndividual;
+    return Math.round((d.valor * 0.45) * 100) / 100;
+  };
+
   if (contracheques.length > 0) {
+    let globalCalcIdxExp = 0;
     contracheques.forEach(emp => {
       const nomeEmp = emp.nomeEmpregador || 'Empregador';
       let descontosRepactuadosEmp = 0;
       (emp.outrosDescontosFolha || []).forEach(d => {
-        descontosRepactuadosEmp += (d.valor * 0.45);
+        const vRepactuado = getPmtRepactuadoExp(d, globalCalcIdxExp);
+        globalCalcIdxExp++;
+        descontosRepactuadosEmp += vRepactuado;
       });
 
       rla2DataRows.push({

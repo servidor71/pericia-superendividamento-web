@@ -562,6 +562,7 @@ export function App() {
                   onIncomeChange={setIncome}
                   onExpensesChange={setExpenses}
                   contracts={contracts}
+                  taxaJurosAm={taxaJurosPlano}
                 />
               )}
 

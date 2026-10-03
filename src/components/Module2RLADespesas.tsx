@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DollarSign, Plus, Trash2, ShieldCheck, Building2, FileText, CheckCircle2 } from 'lucide-react';
 import type { IncomeData, ExpenseData, ContrachequeEmpregador, DescontoFolhaItem, CustomExpenseItem, Contract } from '../types';
 import { initialIncomeData, initialExpenseData } from '../mockData';
-import { calculateRLA, calculateTotalExpenses, formatCurrency } from '../services/calculations';
+import { calculateRLA, calculateTotalExpenses, calculateModulo18PricePlan, formatCurrency } from '../services/calculations';
 import { CurrencyInput } from './CurrencyInput';
 
 interface Module2Props {
@@ -11,6 +11,7 @@ interface Module2Props {
   onIncomeChange: (updated: IncomeData) => void;
   onExpensesChange: (updated: ExpenseData) => void;
   contracts?: Contract[];
+  taxaJurosAm?: number;
 }
 
 export const Module2RLADespesas: React.FC<Module2Props> = ({
@@ -19,6 +20,7 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
   onIncomeChange,
   onExpensesChange,
   contracts = [],
+  taxaJurosAm = 1.63,
 }) => {
   const [dreMode, setDreMode] = useState<'antes' | 'depois'>('antes');
   const [isEditing, setIsEditing] = useState(true);
@@ -29,29 +31,58 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
   const totalDespesas = calculateTotalExpenses(expenses);
   const minimoExistencial = expenses.minimoExistencialConfig || 600;
 
+  // Plano do Módulo 16 (Tabela Price 60x Rateio - Parcela Repactuada PMT)
+  const modulo16Plan = calculateModulo18PricePlan(contracts, taxaJurosAm, 60);
+
   // Mapeamento de Empréstimos Consignados x Não Consignados Repactuados
   const consignadosRepactuadosMap: Record<string, number> = {};
 
-  // Cálculo da RLA Após o Plano
+  const getPmtRepactuado = (d: DescontoFolhaItem, descIdx: number): number => {
+    if (consignadosRepactuadosMap[d.id] !== undefined) {
+      return consignadosRepactuadosMap[d.id];
+    }
+    const descNorm = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matchedRow = modulo16Plan.rows.find(r => {
+      const numNorm = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const credNorm = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (numNorm && descNorm.includes(numNorm)) || 
+             (numNorm && numNorm.includes(descNorm)) || 
+             (credNorm && descNorm.includes(credNorm));
+    });
+    if (matchedRow) return matchedRow.pmtMensalIndividual;
+    if (modulo16Plan.rows[descIdx]) return modulo16Plan.rows[descIdx].pmtMensalIndividual;
+    return Math.round((d.valor * 0.45) * 100) / 100;
+  };
+
+  // Cálculo da RLA Após o Plano (RLA REPACTUADA)
   let rlaDepoisTotal = 0;
+  let globalCalcIdx = 0;
   contracheques.forEach(emp => {
     let descontosRepactuadosEmp = 0;
     (emp.outrosDescontosFolha || []).forEach(d => {
-      const vRepactuado = consignadosRepactuadosMap[d.id] !== undefined ? consignadosRepactuadosMap[d.id] : (d.valor * 0.45);
+      const vRepactuado = getPmtRepactuado(d, globalCalcIdx);
+      globalCalcIdx++;
       descontosRepactuadosEmp += vRepactuado;
     });
     const liquidoEmpApos = emp.rendimentoBruto - (emp.rppsInss + emp.irrf + emp.planoSaudeFolha + descontosRepactuadosEmp);
     rlaDepoisTotal += liquidoEmpApos;
   });
+  const outrasReceitasTotal = (income.outrasReceitasIndividuais || []).reduce((acc, r) => acc + (r.valor || 0), 0);
+  rlaDepoisTotal += outrasReceitasTotal;
 
   // Margem Disponível & Recursos Livres
-  // Dedução efetiva: despesas essenciais comprovadas (ou piso do Mínimo Existencial se despesas forem menores)
   const despesaDeducaoEfetiva = totalDespesas > 0 ? Math.max(totalDespesas, minimoExistencial) : minimoExistencial;
   const margemDisponivelAntes = rlaAntesTotal - despesaDeducaoEfetiva;
   const margemDisponivelAposBruta = rlaDepoisTotal - minimoExistencial;
+  
+  // Total dos Empréstimos Não Consignados Repactuados (extraído do Módulo 16)
   const totalNaoConsignados = contracts
     .filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal')))
-    .reduce((acc, c) => acc + (c.valorParcelaAtual || 0), 0);
+    .reduce((acc, c) => {
+      const matchedRow = modulo16Plan.rows.find(r => r.id === c.id);
+      return acc + (matchedRow ? matchedRow.pmtMensalIndividual : (c.valorParcelaAtual || 0));
+    }, 0);
+
   const rendaDisponivelApos = margemDisponivelAposBruta - totalDespesas - totalNaoConsignados;
   const totalRecursosLivresApos = rendaDisponivelApos + minimoExistencial;
 
@@ -776,10 +807,11 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
                       </td>
                     </tr>
                   ) : (
-                    contracheques.map((emp) => {
+                    contracheques.map((emp, empIdx) => {
+                      const baseIdx = contracheques.slice(0, empIdx).reduce((acc, e) => acc + (e.outrosDescontosFolha || []).length, 0);
                       let descontosRepactuadosEmp = 0;
-                      const descontosMapeados = (emp.outrosDescontosFolha || []).map(d => {
-                        const vRepactuado = consignadosRepactuadosMap[d.id] !== undefined ? consignadosRepactuadosMap[d.id] : (d.valor * 0.45);
+                      const descontosMapeados = (emp.outrosDescontosFolha || []).map((d, dIdx) => {
+                        const vRepactuado = getPmtRepactuado(d, baseIdx + dIdx);
                         descontosRepactuadosEmp += vRepactuado;
                         return { ...d, vRepactuado };
                       });
