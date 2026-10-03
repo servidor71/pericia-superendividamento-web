@@ -858,21 +858,27 @@ export function exportToExcel(
   XLSX.utils.book_append_sheet(wb, sheet3.ws, sheet3.sheetName);
 
   // =============================================================
-  // ABA 4: COMPROMETIMENTO DA RENDA (Módulo 4)
+  // ABA 4: COMPROMETIMENTO DA RENDA (Módulo 4 - Antes x Após)
   // =============================================================
-  const totalEncargosRow4 = 5 + N_contracts;
-  const diagRow4 = totalEncargosRow4 + 3;
-  const posPlanoPmtRow4 = diagRow4 + 3;
+  const totalEncargosRow4Antes = 5 + N_contracts;
+  const rlaRow4Antes = totalEncargosRow4Antes + 1;
+  const percRow4Antes = totalEncargosRow4Antes + 2;
+
+  const headerRow4Apos = percRow4Antes + 3; // empty, section header, table header
+  const dataStartRow4Apos = headerRow4Apos + 1;
+  const totalEncargosRow4Apos = headerRow4Apos + 1 + N_contracts;
+  const rlaRow4Apos = totalEncargosRow4Apos + 1;
+  const percRow4Apos = totalEncargosRow4Apos + 2;
 
   const aba4Rows: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '4.1. ANÁLISE DO COMPROMETIMENTO DA RENDA MENSAL ANTES DO PLANO' }] },
+    { type: 'section', cells: [{ value: '4.1. COMPROMETIMENTO DA RENDA MENSAL ANTES DO PLANO COMPULSÓRIO' }] },
     {
       type: 'header',
       cells: [
         { value: 'Credor / Instituição', align: 'left' },
         { value: 'Nº Contrato', align: 'center' },
-        { value: 'Modalidade', align: 'left' },
-        { value: 'Encargo Mensal (R$)', align: 'right' },
+        { value: 'Tipo de Crédito', align: 'left' },
+        { value: 'Encargo Mensal Contrato (R$)', align: 'right' },
         { value: '% de Participação na RLA', align: 'center' }
       ]
     },
@@ -892,15 +898,102 @@ export function exportToExcel(
     {
       type: 'total',
       cells: [
-        { value: 'TOTAL ENCARGOS ATUAIS' },
+        { value: 'TOTAL DO ENCARGO MENSAL ANTES DO PLANO' },
         { value: '' },
         { value: '' },
         { value: summary.totalParcelasAtuais, formula: `=SUM(D5:D${4 + N_contracts})`, styleType: 'currency' },
-        { value: summary.rla > 0 ? (summary.totalParcelasAtuais / summary.rla) : 0, formula: `=D${totalEncargosRow4}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }
+        { value: summary.rla > 0 ? (summary.totalParcelasAtuais / summary.rla) : 0, formula: `=D${totalEncargosRow4Antes}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'RECEITA LÍQUIDA AJUSTADA ANTES DO PLANO (RLA)' },
+        { value: '' },
+        { value: '' },
+        { value: summary.rla, formula: `='3. RLA e Despesas'!C${rlaRow3}`, styleType: 'currency' },
+        { value: '' }
+      ]
+    },
+    {
+      type: 'total',
+      cells: [
+        { value: '% COMPROMETIDO DA RENDA LÍQUIDA MENSAL (ANTES DO PLANO)' },
+        { value: '' },
+        { value: '' },
+        { value: summary.percentualComprometimentoRLA / 100, formula: `=D${totalEncargosRow4Antes}/D${rlaRow4Antes}`, styleType: 'badge-red', align: 'center' },
+        { value: summary.percentualComprometimentoRLA / 100, formula: `=D${totalEncargosRow4Antes}/D${rlaRow4Antes}`, styleType: 'percent' }
       ]
     },
     { type: 'empty', cells: [] },
-    { type: 'section', cells: [{ value: '4.2. DIAGNÓSTICO TÉCNICO PERICIAL DE SUPERENDIVIDAMENTO' }] },
+    { type: 'section', cells: [{ value: '4.2. COMPROMETIMENTO DA RENDA MENSAL APÓS O PLANO COMPULSÓRIO (MÓDULO 16 - TABELA PRICE 60X)' }] },
+    {
+      type: 'header',
+      cells: [
+        { value: 'Credor / Instituição', align: 'left' },
+        { value: 'Nº Contrato', align: 'center' },
+        { value: 'Tipo de Crédito', align: 'left' },
+        { value: 'Encargo Mensal Repactuado (R$)', align: 'right' },
+        { value: '% de Participação na RLA', align: 'center' }
+      ]
+    },
+    ...contracts.map((c, i) => {
+      const rContrato = 5 + i;
+      const rCurr = dataStartRow4Apos + i;
+      const pmtRepactuado = modulo16PlanExp.rows[i]?.pmtMensalIndividual || 0;
+      return {
+        type: 'data' as const,
+        cells: [
+          { value: c.credor, formula: `='5. Contratos Bancários'!A${rContrato}` },
+          { value: c.numeroContrato, formula: `='5. Contratos Bancários'!B${rContrato}`, align: 'center' as const },
+          { value: c.modalidade, formula: `='5. Contratos Bancários'!C${rContrato}` },
+          { value: pmtRepactuado, formula: `='16. Plano Rateio 60X'!E${rContrato}`, styleType: 'currency' as const },
+          { value: summary.rla > 0 ? (pmtRepactuado / summary.rla) : 0, formula: `=D${rCurr}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' as const }
+        ]
+      };
+    }),
+    {
+      type: 'total',
+      cells: [
+        { value: 'TOTAL DO ENCARGO MENSAL APÓS O PLANO' },
+        { value: '' },
+        { value: '' },
+        { value: modulo16PlanExp.sumPmt, formula: `=SUM(D${dataStartRow4Apos}:D${dataStartRow4Apos + N_contracts - 1})`, styleType: 'currency' },
+        { value: summary.rla > 0 ? (modulo16PlanExp.sumPmt / summary.rla) : 0, formula: `=D${totalEncargosRow4Apos}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'RECEITA LÍQUIDA AJUSTADA APÓS O PLANO (RLA)' },
+        { value: '' },
+        { value: '' },
+        { value: summary.rla, formula: `='3. RLA e Despesas'!C${rlaRow3}`, styleType: 'currency' },
+        { value: '' }
+      ]
+    },
+    {
+      type: 'total',
+      cells: [
+        { value: '% COMPROMETIDO DA RENDA LÍQUIDA MENSAL (APÓS O PLANO)' },
+        { value: '' },
+        { value: '' },
+        { value: summary.rla > 0 ? (modulo16PlanExp.sumPmt / summary.rla) : 0, formula: `=D${totalEncargosRow4Apos}/D${rlaRow4Apos}`, styleType: 'badge-blue', align: 'center' },
+        { value: summary.rla > 0 ? (modulo16PlanExp.sumPmt / summary.rla) : 0, formula: `=D${totalEncargosRow4Apos}/D${rlaRow4Apos}`, styleType: 'percent' }
+      ]
+    },
+    {
+      type: 'total',
+      cells: [
+        { value: '% DA RENDA PRESERVADA APÓS O PLANO COMPULSÓRIO' },
+        { value: '' },
+        { value: '' },
+        { value: Math.max(0, 1 - (summary.rla > 0 ? modulo16PlanExp.sumPmt / summary.rla : 0)), formula: `=MAX(0, 1-D${percRow4Apos})`, styleType: 'badge-green', align: 'center' },
+        { value: Math.max(0, 1 - (summary.rla > 0 ? modulo16PlanExp.sumPmt / summary.rla : 0)), formula: `=MAX(0, 1-D${percRow4Apos})`, styleType: 'percent' }
+      ]
+    },
+    { type: 'empty', cells: [] },
+    { type: 'section', cells: [{ value: '4.3. DIAGNÓSTICO TÉCNICO PERICIAL DE SUPERENDIVIDAMENTO' }] },
     {
       type: 'data',
       cells: [
@@ -909,27 +1002,15 @@ export function exportToExcel(
         { value: '' },
         {
           value: summary.percentualComprometimentoRLA > 50 ? 'SUPERENDIVIDAMENTO SEVERO (>50% RLA)' : 'SUPERENDIVIDAMENTO REGULAR',
-          formula: `=IF(E${totalEncargosRow4}>0.5, "SUPERENDIVIDAMENTO SEVERO (>50% RLA)", "SUPERENDIVIDAMENTO REGULAR")`,
+          formula: `=IF(D${totalEncargosRow4Antes}/D${rlaRow4Antes}>0.5, "SUPERENDIVIDAMENTO SEVERO (>50% RLA)", "SUPERENDIVIDAMENTO REGULAR")`,
           align: 'center',
           styleType: summary.percentualComprometimentoRLA > 50 ? 'badge-red' : 'badge-amber'
         },
-        { value: summary.percentualComprometimentoRLA / 100, formula: `=E${totalEncargosRow4}`, styleType: 'percent' }
+        { value: summary.percentualComprometimentoRLA / 100, formula: `=D${totalEncargosRow4Antes}/D${rlaRow4Antes}`, styleType: 'percent' }
       ]
-    },
-    { type: 'empty', cells: [] },
-    { type: 'section', cells: [{ value: '4.3. ANÁLISE COMPARATIVA DO COMPROMETIMENTO PÓS-PLANO DE REPACTUAÇÃO (60X)' }] },
-    {
-      type: 'header',
-      cells: [
-        { value: 'Indicador Orçamentário Pós-Plano', align: 'left' },
-        { value: 'Base Legislação', align: 'center' },
-        { value: 'Resultado Apurado', align: 'center' }
-      ]
-    },
-    { type: 'data', cells: [{ value: 'Prestação Mensal Repactuada (PMT 60x)' }, { value: 'Art. 104-B §4º CDC', align: 'center' }, { value: summary.capacidadeMensalPlano, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: '% de Comprometimento Pós-Plano na RLA' }, { value: 'Limite 30% RLA', align: 'center' }, { value: (summary.rla > 0 ? summary.capacidadeMensalPlano / summary.rla : 0), formula: `=C${posPlanoPmtRow4}/'3. RLA e Despesas'!C${rlaRow3}`, styleType: 'percent' }] }
+    }
   ];
-  const sheet4 = buildStyledSheet('4. Comprometimento Renda', 'MÓDULO 4 — COMPROMETIMENTO DA RENDA MENSAL (ANTES X APÓS O PLANO)', aba4Rows, [30, 20, 25, 22, 22]);
+  const sheet4 = buildStyledSheet('4. Comprometimento Renda', 'MÓDULO 4 — COMPROMETIMENTO DA RENDA MENSAL (ANTES X APÓS O PLANO COMPULSÓRIO)', aba4Rows, [30, 20, 25, 25, 22]);
   XLSX.utils.book_append_sheet(wb, sheet4.ws, sheet4.sheetName);
 
   // =============================================================

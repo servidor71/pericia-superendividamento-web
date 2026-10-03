@@ -567,7 +567,7 @@ export function App() {
               )}
 
               {activeTab === 4 && (
-                <ModuleComprometimentoAntesDepois income={income} expenses={expenses} contracts={contracts} />
+                <ModuleComprometimentoAntesDepois income={income} expenses={expenses} contracts={contracts} taxaJurosAm={taxaJurosPlano} />
               )}
 
               {activeTab === 5 && (
