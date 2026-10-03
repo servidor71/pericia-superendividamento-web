@@ -175,7 +175,7 @@ export function getDataRefUltimaParcelaModulo6(c: Contract): string {
   return dtContratoStr || new Date().toISOString().split('T')[0];
 }
 
-export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseData, contracts: Contract[]) {
+export function calculateFinancialSummary(income: IncomeData, expenses: ExpenseData, contracts: Contract[], _taxaJurosPlano: number = 1.63) {
   const rla = calculateRLA(income);
   const totalDespesas = calculateTotalExpenses(expenses);
   const minimoExistencial = expenses.minimoExistencialConfig;

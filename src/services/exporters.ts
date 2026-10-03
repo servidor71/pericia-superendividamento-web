@@ -315,9 +315,10 @@ export function exportToExcel(
   contracts: Contract[],
   quesitos: QuesitoPericial[],
   profile?: ProfessionalProfile,
-  documents?: ProcessDocumentItem[]
+  documents?: ProcessDocumentItem[],
+  taxaJurosPlano: number = 1.63
 ) {
-  const summary = calculateFinancialSummary(income, expenses, contracts);
+  const summary = calculateFinancialSummary(income, expenses, contracts, taxaJurosPlano);
   const plan60x = calculateProportional60xPlan(contracts, summary.capacidadeMensalPlano);
   const evolution = calculateContractEvolution(contracts, summary.capacidadeMensalPlano);
 
@@ -1282,12 +1283,59 @@ export function exportToExcel(
   // =============================================================
   // ABA 14: PRICE 60 PARCELAS (Módulo 14)
   // =============================================================
-  const iPlano = 0;
+  const taxaAmDecimal = (taxaJurosPlano || 1.63) / 100;
   let currentSaldoPlano = summary.totalSaldoDevedorINPC;
   const pmtPlanoMes = summary.capacidadeMensalPlano;
 
   const rowsPrice60: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '14.1. CRONOGRAMA DE AMORTIZAÇÃO TABELA PRICE EM 60 PARCELAS DO PLANO COMPULSÓRIO' }] },
+    { type: 'section', cells: [{ value: '14.1. PARÂMETROS DO PLANO COMPULSÓRIO DE AMORTIZAÇÃO (TABELA PRICE)' }] },
+    {
+      type: 'header',
+      cells: [
+        { value: 'Parâmetro do Plano', align: 'left' },
+        { value: 'Valor / Apuração', align: 'right' },
+        { value: 'Fórmula Excel / Referência', align: 'left' },
+        { value: 'Descrição e Fundamentação Legal', align: 'left' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Saldo Devedor Restante (R$)' },
+        { value: summary.totalSaldoDevedorINPC, formula: `='10. Dívidas Tabela 6'!E${totalRow10}`, styleType: 'currency' },
+        { value: `='10. Dívidas Tabela 6'!E${totalRow10}` },
+        { value: 'Saldo devedor total consolidado atualizado (Módulo 10)' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Taxa de Juros (a.m.)' },
+        { value: taxaAmDecimal, styleType: 'percent' },
+        { value: `${(taxaJurosPlano || 1.63).toFixed(2).replace('.', ',')}% a.m.` },
+        { value: 'Taxa nominal de juros mensal do plano de repactuação' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'Prazo do Plano (Meses)' },
+        { value: 60, align: 'right' },
+        { value: '60' },
+        { value: 'Prazo legal do plano compulsório (art. 104-A, § 4º do CDC)' }
+      ]
+    },
+    {
+      type: 'data',
+      cells: [
+        { value: 'PRESTAÇÃO CALCULADA (PMT)' },
+        { value: pmtPlanoMes, formula: `=IF(B6=0, B5/B7, PMT(B6, B7, -B5))`, styleType: 'currency' },
+        { value: `=PGTO(B6; B7; -B5)` },
+        { value: 'Prestação constante calculada pelo Sistema Francês de Amortização (Price)' }
+      ]
+    },
+    { type: 'empty', cells: [] },
+    { type: 'section', cells: [{ value: '14.2. CRONOGRAMA COMPLETO DE AMORTIZAÇÃO TABELA PRICE (60 PARCELAS)' }] },
     {
       type: 'header',
       cells: [
@@ -1302,15 +1350,15 @@ export function exportToExcel(
   ];
 
   for (let m = 1; m <= 60; m++) {
-    const r = 4 + m; // row index in Excel (5 for m=1, 64 for m=60)
-    const jurosM = currentSaldoPlano * iPlano;
-    const amortM = Math.min(currentSaldoPlano, pmtPlanoMes - jurosM);
+    const r = 11 + m; // row index in Excel (12 for m=1, 71 for m=60)
+    const jurosM = currentSaldoPlano * taxaAmDecimal;
+    const amortM = m === 60 ? currentSaldoPlano : Math.min(currentSaldoPlano, pmtPlanoMes - jurosM);
     const saldoFinalM = Math.max(0, currentSaldoPlano - amortM);
 
-    const saldoInicialFormula = m === 1 ? `='10. Dívidas Tabela 6'!E${totalRow10}` : `=F${r - 1}`;
-    const jurosFormula = `=0`;
-    const amortFormula = m === 1 ? `=E${r}` : `=MIN(B${r}, E${r})`;
-    const pmtFormula = `='16. Plano Rateio 60X'!E${totalRow16}`;
+    const saldoInicialFormula = m === 1 ? `=B5` : `=F${r - 1}`;
+    const jurosFormula = `=ROUND(B${r}*$B$6, 2)`;
+    const amortFormula = m === 60 ? `=B${r}` : `=MIN(B${r}, E${r}-C${r})`;
+    const pmtFormula = `=$B$8`;
     const saldoFinalFormula = `=MAX(0, B${r}-D${r})`;
 
     rowsPrice60.push({
@@ -1331,15 +1379,15 @@ export function exportToExcel(
     type: 'total',
     cells: [
       { value: 'TOTAL EM 60 PARCELAS' },
-      { value: summary.totalSaldoDevedorINPC, formula: `='10. Dívidas Tabela 6'!E${totalRow10}`, styleType: 'currency' },
-      { value: 0, formula: `=SUM(C5:C64)`, styleType: 'currency' },
-      { value: summary.capacidadeMensalPlano * 60, formula: `=SUM(D5:D64)`, styleType: 'currency' },
-      { value: summary.capacidadeMensalPlano, formula: `='16. Plano Rateio 60X'!E${totalRow16}`, styleType: 'currency' },
-      { value: 0, formula: `=F64`, styleType: 'currency' }
+      { value: summary.totalSaldoDevedorINPC, formula: `=B5`, styleType: 'currency' },
+      { value: 0, formula: `=SUM(C12:C71)`, styleType: 'currency' },
+      { value: pmtPlanoMes * 60, formula: `=SUM(D12:D71)`, styleType: 'currency' },
+      { value: pmtPlanoMes, formula: `=B8`, styleType: 'currency' },
+      { value: 0, formula: `=F71`, styleType: 'currency' }
     ]
   });
 
-  const sheet14 = buildStyledSheet('14. Price 60 Parcelas', 'MÓDULO 14 — AMORTIZAÇÃO TABELA PRICE (60 PARCELAS)', rowsPrice60, [15, 25, 18, 20, 25, 25]);
+  const sheet14 = buildStyledSheet('14. Price 60 Parcelas', 'MÓDULO 14 — AMORTIZAÇÃO TABELA PRICE (60 PARCELAS)', rowsPrice60, [15, 28, 22, 28, 25, 25]);
   XLSX.utils.book_append_sheet(wb, sheet14.ws, sheet14.sheetName);
 
   // =============================================================

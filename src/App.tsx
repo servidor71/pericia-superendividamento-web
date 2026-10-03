@@ -298,7 +298,7 @@ export function App() {
   };
 
   const handleExportExcel = () => {
-    exportToExcel(process, income, expenses, contracts, quesitos, profile, documents);
+    exportToExcel(process, income, expenses, contracts, quesitos, profile, documents, taxaJurosPlano);
   };
 
   const handleGenerateAIPlan = () => {
