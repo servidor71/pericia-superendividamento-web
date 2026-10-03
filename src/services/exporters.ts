@@ -333,14 +333,39 @@ export function exportToExcel(
   // -------------------------------------------------------------
   // Dynamic Index Calculations for Row References across Sheets
   // -------------------------------------------------------------
-  const N_extraInc = (income.outrasReceitasIndividuais || []).length;
-  const N_extraExp = (expenses.outrasDespesasIndividuais || []).length;
+  const contracheques = income.contrachequesPorEmpregador || [];
+
+  let consignadosFolha = (contracheques || []).reduce((acc, emp) => 
+    acc + (emp.outrosDescontosFolha || []).reduce((a, d) => a + (d.valor || 0), 0), 0);
+
+  let N_rla1 = 0;
+  if (contracheques.length > 0) {
+    contracheques.forEach(emp => {
+      N_rla1 += 4 + (emp.outrosDescontosFolha || []).length;
+    });
+  } else {
+    N_rla1 = 3;
+  }
+  N_rla1 += (income.outrasReceitasIndividuais || []).length;
+
+  let N_rla2 = 0;
+  if (contracheques.length > 0) {
+    contracheques.forEach(_emp => {
+      N_rla2 += 3;
+    });
+  } else {
+    N_rla2 = 3;
+  }
+  N_rla2 += (income.outrasReceitasIndividuais || []).length;
+
+  const N_exp = 6 + (expenses.outrasDespesasIndividuais || []).length;
 
   // Sheet 3 (3. RLA e Despesas) Row Numbers (1-indexed for Excel)
-  const rlaRow3 = 8 + N_extraInc;
-  const expTotalRow3 = 18 + N_extraInc + N_extraExp;
-  const minExistRow3 = 21 + N_extraInc + N_extraExp;
-  const sobraRow3 = 22 + N_extraInc + N_extraExp;
+  const rlaRow3 = 5 + N_rla1;
+  const rla2TotalRow3 = 9 + N_rla1 + N_rla2;
+  const expTotalRow3 = 13 + N_rla1 + N_rla2 + N_exp;
+  const minExistRow3 = 16 + N_rla1 + N_rla2 + N_exp;
+  const sobraRow3 = 17 + N_rla1 + N_rla2 + N_exp;
 
   // Contract-based sheet totals (Rows 5 to 4 + N_contracts, Total is at 5 + N_contracts)
   const totalRow5 = 5 + N_contracts;
@@ -599,85 +624,181 @@ export function exportToExcel(
   XLSX.utils.book_append_sheet(wb, sheet2.ws, sheet2.sheetName);
 
   // =============================================================
-  // ABA 3: RLA E DESPESAS (Módulo 3)
+  // ABA 3: RLA E DESPESAS (Módulo 3 - RLA 1 Antes x RLA 2 Após)
   // =============================================================
-  let salarioBrutoVal = income.salarioBruto || 0;
-  let totalDeducoesLegais = (income.rppsInss || 0) + (income.irrf || 0) + (income.pensaoAlimenticia || 0) + (income.planoSaudeFolha || 0) + (income.outrasDeducoesLegais || 0);
-  let consignadosFolha = (income.contrachequesPorEmpregador || []).reduce((acc, emp) => 
-    acc + (emp.outrosDescontosFolha || []).reduce((a, d) => a + (d.valor || 0), 0), 0);
+  // --- 1. RLA 1 - ANTES DO PLANO COMPULSÓRIO ---
+  const rla1DataRows: SheetRowDefinition[] = [];
 
-  if (income.contrachequesPorEmpregador && income.contrachequesPorEmpregador.length > 0) {
-    salarioBrutoVal = 0;
-    totalDeducoesLegais = 0;
-    consignadosFolha = 0;
-    for (const emp of income.contrachequesPorEmpregador) {
-      salarioBrutoVal += (emp.rendimentoBruto || 0);
-      totalDeducoesLegais += (emp.rppsInss || 0) + (emp.irrf || 0) + (emp.planoSaudeFolha || 0);
-      consignadosFolha += (emp.outrosDescontosFolha || []).reduce((acc, d) => acc + (d.valor || 0), 0);
-    }
-    salarioBrutoVal += (income.outrasReceitasIndividuais || []).reduce((acc, r) => acc + (r.valor || 0), 0);
-    totalDeducoesLegais += (income.pensaoAlimenticia || 0) + (income.outrasDeducoesLegais || 0);
+  if (contracheques.length > 0) {
+    contracheques.forEach(emp => {
+      const nomeEmp = emp.nomeEmpregador || 'Empregador';
+      rla1DataRows.push({
+        type: 'data',
+        cells: [{ value: `(+) Salário Bruto / Proventos — ${nomeEmp}` }, { value: 'Provento', align: 'center' }, { value: emp.rendimentoBruto, styleType: 'currency' }]
+      });
+      rla1DataRows.push({
+        type: 'data',
+        cells: [{ value: `(−) RPPS / INSS — ${nomeEmp}` }, { value: 'Dedução Legal', align: 'center' }, { value: emp.rppsInss, styleType: 'currency' }]
+      });
+      rla1DataRows.push({
+        type: 'data',
+        cells: [{ value: `(−) IRRF Retido na Fonte — ${nomeEmp}` }, { value: 'Dedução Legal', align: 'center' }, { value: emp.irrf, styleType: 'currency' }]
+      });
+      rla1DataRows.push({
+        type: 'data',
+        cells: [{ value: `(−) Plano de Saúde — ${nomeEmp}` }, { value: 'Dedução Legal', align: 'center' }, { value: emp.planoSaudeFolha, styleType: 'currency' }]
+      });
+      (emp.outrosDescontosFolha || []).forEach(desc => {
+        rla1DataRows.push({
+          type: 'data',
+          cells: [{ value: `(−) ${desc.descricao || 'Desconto em Folha'} — ${nomeEmp}` }, { value: 'Consignado Folha', align: 'center' }, { value: desc.valor, styleType: 'currency' }]
+        });
+      });
+    });
+  } else {
+    rla1DataRows.push({
+      type: 'data',
+      cells: [{ value: '(+) Salário Bruto / Proventos Totais' }, { value: 'Provento', align: 'center' }, { value: income.salarioBruto || 0, styleType: 'currency' }]
+    });
+    rla1DataRows.push({
+      type: 'data',
+      cells: [{ value: '(−) Deduções Legais Obrigatórias (RPPS, IRRF, Pensão, Saúde)' }, { value: 'Dedução Legal', align: 'center' }, { value: (income.rppsInss || 0) + (income.irrf || 0) + (income.pensaoAlimenticia || 0) + (income.planoSaudeFolha || 0), styleType: 'currency' }]
+    });
+    rla1DataRows.push({
+      type: 'data',
+      cells: [{ value: '(−) Empréstimos Consignados em Folha' }, { value: 'Consignado Folha', align: 'center' }, { value: 0, styleType: 'currency' }]
+    });
   }
 
-  const extraIncEndRow = 5 + N_extraInc;
-  const deducoesRow = 6 + N_extraInc;
-  const consignadosRow = 7 + N_extraInc;
+  (income.outrasReceitasIndividuais || []).forEach(r => {
+    rla1DataRows.push({
+      type: 'data',
+      cells: [{ value: `(+) ${r.descricao}` }, { value: 'Provento Extra', align: 'center' }, { value: r.valor, styleType: 'currency' }]
+    });
+  });
 
-  const rlaFormula = N_extraInc > 0
-    ? `=C5+SUM(C6:C${extraIncEndRow})-C${deducoesRow}-C${consignadosRow}`
-    : `=C5-C${deducoesRow}-C${consignadosRow}`;
+  // --- 2. RLA 2 - APÓS O PLANO COMPULSÓRIO ---
+  const rla2DataRows: SheetRowDefinition[] = [];
 
-  const expStartRow = 12 + N_extraInc;
-  const expEndRow = 17 + N_extraInc + N_extraExp;
-  const expFormula = `=SUM(C${expStartRow}:C${expEndRow})`;
+  let rlaDepoisTotalVal = 0;
 
+  if (contracheques.length > 0) {
+    contracheques.forEach(emp => {
+      const nomeEmp = emp.nomeEmpregador || 'Empregador';
+      let descontosRepactuadosEmp = 0;
+      (emp.outrosDescontosFolha || []).forEach(d => {
+        descontosRepactuadosEmp += (d.valor * 0.45);
+      });
+
+      rla2DataRows.push({
+        type: 'data',
+        cells: [{ value: `(+) Rendimento Bruto — ${nomeEmp}` }, { value: 'Provento', align: 'center' }, { value: emp.rendimentoBruto, styleType: 'currency' }]
+      });
+      rla2DataRows.push({
+        type: 'data',
+        cells: [{ value: `(−) Deduções Legais (RPPS, IRRF, Saúde) — ${nomeEmp}` }, { value: 'Dedução Legal', align: 'center' }, { value: emp.rppsInss + emp.irrf + emp.planoSaudeFolha, styleType: 'currency' }]
+      });
+      rla2DataRows.push({
+        type: 'data',
+        cells: [{ value: `(−) Descontos Consignados Reorganizados — ${nomeEmp}` }, { value: 'Consignado Folha', align: 'center' }, { value: descontosRepactuadosEmp, styleType: 'currency' }]
+      });
+
+      const liqEmpApos = emp.rendimentoBruto - (emp.rppsInss + emp.irrf + emp.planoSaudeFolha + descontosRepactuadosEmp);
+      rlaDepoisTotalVal += liqEmpApos;
+    });
+  } else {
+    rla2DataRows.push({
+      type: 'data',
+      cells: [{ value: '(+) Salário Bruto / Proventos Totais' }, { value: 'Provento', align: 'center' }, { value: income.salarioBruto || 0, styleType: 'currency' }]
+    });
+    rla2DataRows.push({
+      type: 'data',
+      cells: [{ value: '(−) Deduções Legais Obrigatórias' }, { value: 'Dedução Legal', align: 'center' }, { value: (income.rppsInss || 0) + (income.irrf || 0) + (income.pensaoAlimenticia || 0) + (income.planoSaudeFolha || 0), styleType: 'currency' }]
+    });
+    rla2DataRows.push({
+      type: 'data',
+      cells: [{ value: '(−) Descontos Consignados Mantidos' }, { value: 'Consignado Folha', align: 'center' }, { value: 0, styleType: 'currency' }]
+    });
+    rlaDepoisTotalVal = summary.rla;
+  }
+
+  (income.outrasReceitasIndividuais || []).forEach(r => {
+    rlaDepoisTotalVal += r.valor;
+    rla2DataRows.push({
+      type: 'data',
+      cells: [{ value: `(+) ${r.descricao}` }, { value: 'Provento Extra', align: 'center' }, { value: r.valor, styleType: 'currency' }]
+    });
+  });
+
+  // --- 3. LEVANTAMENTO DAS DESPESAS ESSENCIAIS ---
+  const expDataRows: SheetRowDefinition[] = [
+    { type: 'data', cells: [{ value: 'Moradia / Aluguel / Condomínio' }, { value: expenses.fonteMoradia || 'Comprovante nos autos', align: 'center' }, { value: expenses.moradia, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: 'Alimentação & Supermercado' }, { value: expenses.fonteAlimentacao || 'Comprovante nos autos', align: 'center' }, { value: expenses.alimentacao, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: 'Saúde & Medicamentos' }, { value: expenses.fonteSaude || 'Comprovante nos autos', align: 'center' }, { value: expenses.saudeMedicamentos, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: 'Transporte & Locomoção' }, { value: expenses.fonteTransporte || 'Comprovante nos autos', align: 'center' }, { value: expenses.transporte, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: 'Educação / Dependentes' }, { value: expenses.fonteEducacao || 'Comprovante nos autos', align: 'center' }, { value: expenses.educacaoDependentes, styleType: 'currency' }] },
+    { type: 'data', cells: [{ value: 'Outras Despesas Essenciais (Luz / Água / Gás / Telefone)' }, { value: expenses.fonteOutrasDespesas || 'Comprovante nos autos', align: 'center' }, { value: expenses.outrasDespesasEssenciais, styleType: 'currency' }] },
+    ...((expenses.outrasDespesasIndividuais || []).map(d => ({
+      type: 'data' as const,
+      cells: [{ value: `Despesa Individual: ${d.descricao}` }, { value: 'Comprovado nos autos', align: 'center' }, { value: d.valor, styleType: 'currency' }]
+    })))
+  ];
+
+  const expStartRowExcel = 13 + N_rla1 + N_rla2;
+  const expEndRowExcel = 12 + N_rla1 + N_rla2 + N_exp;
+  const expFormula = `=SUM(C${expStartRowExcel}:C${expEndRowExcel})`;
   const sobraFormula = `=MAX(0, C${rlaRow3}-C${expTotalRow3})`;
+  const recursosLivresFormula = `=MAX(0, C${rla2TotalRow3}-C${expTotalRow3}-'16. Plano Rateio 60X'!E${totalRow16})`;
 
   const aba3Rows: SheetRowDefinition[] = [
-    { type: 'section', cells: [{ value: '3.1. RENDA LÍQUIDA MENSAL AJUSTADA (RLA)' }] },
+    { type: 'section', cells: [{ value: '3.1. RENDA LÍQUIDA MENSAL AJUSTADA (RLA 1 - ANTES DO PLANO COMPULSÓRIO)' }] },
     {
       type: 'header',
       cells: [
-        { value: 'Rubrica de Rendimento / Dedução', align: 'left' },
+        { value: 'Rubrica de Rendimento / Dedução em Folha', align: 'left' },
         { value: 'Tipo de Rubrica', align: 'center' },
         { value: 'Valor Mensal (R$)', align: 'right' }
       ]
     },
-    { type: 'data', cells: [{ value: '(+) Salário Bruto / Proventos Totais' }, { value: 'Provento', align: 'center' }, { value: salarioBrutoVal, styleType: 'currency' }] },
-    ...((income.outrasReceitasIndividuais || []).map(r => ({
-      type: 'data' as const,
-      cells: [{ value: `(+) ${r.descricao}` }, { value: 'Provento Extra', align: 'center' }, { value: r.valor, styleType: 'currency' }]
-    }))),
-    { type: 'data', cells: [{ value: '(−) Deduções Legais Obrigatórias (RPPS, IRRF, Pensão, Saúde)' }, { value: 'Dedução Legal', align: 'center' }, { value: totalDeducoesLegais, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: '(−) Empréstimos Consignados em Folha (Dec. 11.150/2022)' }, { value: 'Consignado Folha', align: 'center' }, { value: consignadosFolha, styleType: 'currency' }] },
+    ...rla1DataRows,
     {
       type: 'total',
       cells: [
-        { value: '(=) RENDA LÍQUIDA AJUSTADA (RLA)' },
+        { value: '(=) RENDA LÍQUIDA AJUSTADA (RLA 1 - ANTES DO PLANO)' },
         { value: 'Base de Cálculo', align: 'center' },
-        { value: summary.rla, formula: rlaFormula, styleType: 'currency' }
+        { value: summary.rla, styleType: 'currency' }
       ]
     },
     { type: 'empty', cells: [] },
-    { type: 'section', cells: [{ value: '3.2. LEVANTAMENTO DAS DESPESAS ESSENCIAIS MENSAIS' }] },
+    { type: 'section', cells: [{ value: '3.2. RENDA LÍQUIDA MENSAL AJUSTADA REORGANIZADA (RLA 2 - APÓS O PLANO COMPULSÓRIO)' }] },
+    {
+      type: 'header',
+      cells: [
+        { value: 'Rubrica de Rendimento / Dedução Reorganizada', align: 'left' },
+        { value: 'Tipo de Rubrica', align: 'center' },
+        { value: 'Valor Mensal (R$)', align: 'right' }
+      ]
+    },
+    ...rla2DataRows,
+    {
+      type: 'total',
+      cells: [
+        { value: '(=) RENDA LÍQUIDA AJUSTADA REORGANIZADA (RLA 2 - APÓS O PLANO)' },
+        { value: 'Renda Reorganizada', align: 'center' },
+        { value: rlaDepoisTotalVal, styleType: 'currency' }
+      ]
+    },
+    { type: 'empty', cells: [] },
+    { type: 'section', cells: [{ value: '3.3. LEVANTAMENTO DAS DESPESAS ESSENCIAIS MENSAIS DO DEVEDOR' }] },
     {
       type: 'header',
       cells: [
         { value: 'Grupo de Despesa Essencial', align: 'left' },
-        { value: 'Fonte Documental', align: 'center' },
+        { value: 'Fonte Documental / Comprovação', align: 'center' },
         { value: 'Valor Mensal (R$)', align: 'right' }
       ]
     },
-    { type: 'data', cells: [{ value: 'Moradia / Aluguel / Condomínio' }, { value: expenses.fonteMoradia || 'Comprovante nos autos', align: 'center' }, { value: expenses.moradia, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: 'Alimentação' }, { value: expenses.fonteAlimentacao || 'Comprovante nos autos', align: 'center' }, { value: expenses.alimentacao, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: 'Saúde / Medicamentos' }, { value: expenses.fonteSaude || 'Comprovante nos autos', align: 'center' }, { value: expenses.saudeMedicamentos, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: 'Transporte' }, { value: expenses.fonteTransporte || 'Comprovante nos autos', align: 'center' }, { value: expenses.transporte, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: 'Educação / Dependentes' }, { value: expenses.fonteEducacao || 'Comprovante nos autos', align: 'center' }, { value: expenses.educacaoDependentes, styleType: 'currency' }] },
-    { type: 'data', cells: [{ value: 'Outras Despesas Essenciais' }, { value: expenses.fonteOutrasDespesas || 'Comprovante nos autos', align: 'center' }, { value: expenses.outrasDespesasEssenciais, styleType: 'currency' }] },
-    ...((expenses.outrasDespesasIndividuais || []).map(d => ({
-      type: 'data' as const,
-      cells: [{ value: `Despesa Individual: ${d.descricao}` }, { value: 'Comprovado nos autos', align: 'center' }, { value: d.valor, styleType: 'currency' }]
-    }))),
+    ...expDataRows,
     {
       type: 'total',
       cells: [
@@ -687,7 +808,7 @@ export function exportToExcel(
       ]
     },
     { type: 'empty', cells: [] },
-    { type: 'section', cells: [{ value: '3.3. MÍNIMO EXISTENCIAL E MARGEM DISPONÍVEL MENSAL' }] },
+    { type: 'section', cells: [{ value: '3.4. MÍNIMO EXISTENCIAL, MARGEM DISPONÍVEL E RECURSOS LIVRES (ANTES X APÓS O PLANO)' }] },
     {
       type: 'data',
       cells: [
@@ -699,13 +820,22 @@ export function exportToExcel(
     {
       type: 'total',
       cells: [
-        { value: '(=) MARGEM DISPONÍVEL MENSAL PARA O PLANO (SOBRA LÍQUIDA)' },
-        { value: 'RLA − ME', align: 'center' as const, styleType: 'badge-green' as const },
+        { value: '(=) MARGEM DISPONÍVEL MENSAL ANTES DO PLANO (SOBRA LÍQUIDA)' },
+        { value: 'RLA 1 − Despesas', align: 'center' as const, styleType: 'badge-green' as const },
         { value: summary.sobraLiquida, formula: sobraFormula, styleType: 'currency' as const }
+      ]
+    },
+    {
+      type: 'total',
+      cells: [
+        { value: '(=) RECURSOS LIVRES REMANESCENTES APÓS O PLANO (RLA 2)' },
+        { value: 'RLA 2 − Despesas − PMT 60x', align: 'center' as const, styleType: 'badge-blue' as const },
+        { value: Math.max(0, rlaDepoisTotalVal - summary.totalDespesas - summary.capacidadeMensalPlano), formula: recursosLivresFormula, styleType: 'currency' as const }
       ]
     }
   ];
-  const sheet3 = buildStyledSheet('3. RLA e Despesas', 'MÓDULO 3 — RENDA LÍQUIDA MENSAL AJUSTADA (RLA), DESPESAS E MÍNIMO EXISTENCIAL', aba3Rows, [45, 30, 22]);
+
+  const sheet3 = buildStyledSheet('3. RLA e Despesas', 'MÓDULO 3 — RENDA LÍQUIDA MENSAL AJUSTADA (RLA 1 ANTES X RLA 2 APÓS), DESPESAS E MÍNIMO EXISTENCIAL', aba3Rows, [50, 32, 22]);
   XLSX.utils.book_append_sheet(wb, sheet3.ws, sheet3.sheetName);
 
   // =============================================================
