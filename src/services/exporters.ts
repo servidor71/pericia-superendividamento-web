@@ -685,14 +685,28 @@ export function exportToExcel(
   const modulo16PlanExp = calculateModulo18PricePlan(contracts, taxaJurosPlano, 60);
 
   const getPmtRepactuadoExp = (d: DescontoFolhaItem, descIdx: number): number => {
-    const descNorm = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const numNormItem = (d.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const descNormItem = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
     const matchedRow = modulo16PlanExp.rows.find(r => {
-      const numNorm = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const credNorm = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      return (numNorm && descNorm.includes(numNorm)) || 
-             (numNorm && numNorm.includes(descNorm)) || 
-             (credNorm && descNorm.includes(credNorm));
+      const numNormRow = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const credNormRow = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      if (numNormRow && numNormItem && (numNormRow === numNormItem || numNormItem.includes(numNormRow) || numNormRow.includes(numNormItem))) {
+        return true;
+      }
+      if (numNormRow && descNormItem && (numNormRow === descNormItem || descNormItem.includes(numNormRow) || numNormRow.includes(descNormItem))) {
+        return true;
+      }
+      if (d.id && r.id && d.id === r.id) {
+        return true;
+      }
+      if (credNormRow && (descNormItem.includes(credNormRow) || numNormItem.includes(credNormRow))) {
+        return true;
+      }
+      return false;
     });
+
     if (matchedRow) return matchedRow.pmtMensalIndividual;
     if (modulo16PlanExp.rows[descIdx]) return modulo16PlanExp.rows[descIdx].pmtMensalIndividual;
     return Math.round((d.valor * 0.45) * 100) / 100;

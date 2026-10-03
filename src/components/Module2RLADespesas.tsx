@@ -41,14 +41,28 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
     if (consignadosRepactuadosMap[d.id] !== undefined) {
       return consignadosRepactuadosMap[d.id];
     }
-    const descNorm = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const numNormItem = (d.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const descNormItem = (d.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
     const matchedRow = modulo16Plan.rows.find(r => {
-      const numNorm = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const credNorm = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      return (numNorm && descNorm.includes(numNorm)) || 
-             (numNorm && numNorm.includes(descNorm)) || 
-             (credNorm && descNorm.includes(credNorm));
+      const numNormRow = (r.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const credNormRow = (r.credor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      if (numNormRow && numNormItem && (numNormRow === numNormItem || numNormItem.includes(numNormRow) || numNormRow.includes(numNormItem))) {
+        return true;
+      }
+      if (numNormRow && descNormItem && (numNormRow === descNormItem || descNormItem.includes(numNormRow) || numNormRow.includes(descNormItem))) {
+        return true;
+      }
+      if (d.id && r.id && d.id === r.id) {
+        return true;
+      }
+      if (credNormRow && (descNormItem.includes(credNormRow) || numNormItem.includes(credNormRow))) {
+        return true;
+      }
+      return false;
     });
+
     if (matchedRow) return matchedRow.pmtMensalIndividual;
     if (modulo16Plan.rows[descIdx]) return modulo16Plan.rows[descIdx].pmtMensalIndividual;
     return Math.round((d.valor * 0.45) * 100) / 100;
@@ -75,11 +89,15 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
   const margemDisponivelAntes = rlaAntesTotal - despesaDeducaoEfetiva;
   const margemDisponivelAposBruta = rlaDepoisTotal - minimoExistencial;
   
-  // Total dos Empréstimos Não Consignados Repactuados (extraído do Módulo 16)
+  // Total dos Empréstimos Não Consignados Repactuados (extraído da tabela de comprometimento do Módulo 4)
   const totalNaoConsignados = contracts
     .filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal')))
     .reduce((acc, c) => {
-      const matchedRow = modulo16Plan.rows.find(r => r.id === c.id);
+      const numNormC = (c.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const matchedRow = modulo16Plan.rows.find(r => 
+        r.id === c.id || 
+        (numNormC && r.numeroContrato && r.numeroContrato.toLowerCase().replace(/[^a-z0-9]/g, '') === numNormC)
+      );
       return acc + (matchedRow ? matchedRow.pmtMensalIndividual : (c.valorParcelaAtual || 0));
     }, 0);
 
@@ -1032,14 +1050,22 @@ export const Module2RLADespesas: React.FC<Module2Props> = ({
                     <td className="py-2.5 px-4 font-semibold text-xs text-amber-900">Despesas essenciais deduzidas da margem</td>
                   </tr>
 
-                  {/* Empréstimos Não Consignados Repactuados Dinâmicos */}
-                  {contracts.filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal'))).map((c) => (
-                    <tr key={c.id} className="bg-white">
-                      <td className="py-2 px-4 font-normal text-slate-700 text-xs">(-) {c.credor} - {c.numeroContrato}</td>
-                      <td className="py-2 px-4 text-right font-normal text-red-700 text-xs">-{formatCurrency(c.valorParcelaAtual)}</td>
-                      <td className="py-2 px-4 font-normal text-emerald-800 text-xs">Empréstimos não Consignados Repactuados</td>
-                    </tr>
-                  ))}
+                  {/* Empréstimos Não Consignados Repactuados Dinâmicos (Extraídos da Tabela de Comprometimento do Módulo 4) */}
+                  {contracts.filter(c => c.modalidade && (c.modalidade.toLowerCase().includes('não consignado') || c.modalidade.toLowerCase().includes('pessoal'))).map((c) => {
+                    const numNormC = (c.numeroContrato || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const matchedRow = modulo16Plan.rows.find(r => 
+                      r.id === c.id || 
+                      (numNormC && r.numeroContrato && r.numeroContrato.toLowerCase().replace(/[^a-z0-9]/g, '') === numNormC)
+                    );
+                    const pmtRepactuada = matchedRow ? matchedRow.pmtMensalIndividual : (c.valorParcelaAtual || 0);
+                    return (
+                      <tr key={c.id} className="bg-white">
+                        <td className="py-2 px-4 font-normal text-slate-700 text-xs">(-) {c.credor} - {c.numeroContrato}</td>
+                        <td className="py-2 px-4 text-right font-normal text-red-700 text-xs">-{formatCurrency(pmtRepactuada)}</td>
+                        <td className="py-2 px-4 font-normal text-emerald-800 text-xs font-semibold">Empréstimos não Consignados Repactuados</td>
+                      </tr>
+                    );
+                  })}
 
                   {/* (=) RENDA DISPONÍVEL */}
                   <tr className="bg-blue-50 font-extrabold text-blue-900 border-t border-slate-300">

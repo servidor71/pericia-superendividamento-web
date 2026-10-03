@@ -61,6 +61,7 @@ export interface DescontoFolhaItem {
   id: string;
   descricao: string;
   valor: number;
+  numeroContrato?: string;
   fonteDoc?: string;
 }
 
