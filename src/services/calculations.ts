@@ -63,14 +63,10 @@ export function getSaldoDevedorModulo6(c: Contract): number {
   const parcelasRestantes = Number(c.qtdParcelasRestantes) || Math.max(0, prazoMeses - parcelasPagas);
   const saldoRef = Number(c.saldoDevedorRefUltimaParcela) || 0;
 
-  // 1. Se o saldo devedor de referência foi expressamente informado (> 0), utiliza prioritariamente
-  if (saldoRef > 0) {
-    return Math.round(saldoRef * 100) / 100;
-  }
-
-  // 2. Se houver valor principal e prazo > 0, apura a evolução Price pelas parcelas pagas
+  // 1. Se houver valor principal e prazo > 0, apura a evolução Price pelas parcelas pagas (Módulo 6: Saldo Devedor (Pagas))
   if (valorPrincipal > 0 && prazoMeses > 0) {
     if (parcelasPagas === 0) return Math.round(valorPrincipal * 100) / 100;
+    if (parcelasPagas >= prazoMeses) return 0;
 
     const iContrato = taxaJurosAm / 100;
     const pmtPriceCalculada = iContrato > 0
@@ -95,9 +91,12 @@ export function getSaldoDevedorModulo6(c: Contract): number {
       currentSD = nextSD;
     }
 
-    if (currentSD > 0) {
-      return Math.round(currentSD * 100) / 100;
-    }
+    return Math.round(currentSD * 100) / 100;
+  }
+
+  // 2. Se o saldo devedor de referência foi informado (> 0) e não há parâmetros Price completos:
+  if (saldoRef > 0) {
+    return Math.round(saldoRef * 100) / 100;
   }
 
   // 3. Fallbacks para contratos/cartões de crédito sem prazo preenchido (ex: NU FINANCEIRA, MIDWAY, MERCADO CRÉDITO):
